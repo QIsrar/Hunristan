@@ -37,7 +37,7 @@ function SignInForm() {
       // Fetch profile to check status and route
       const { data: profile, error: profErr } = await supabase
         .from("profiles")
-        .select("role, organizer_status, is_banned, full_name, rejection_reason")
+        .select("email, role, organizer_status, is_banned, full_name, rejection_reason")
         .eq("id", data.user.id)
         .single();
 
@@ -52,7 +52,7 @@ function SignInForm() {
             role: data.user.user_metadata?.role || "participant",
             organizer_status: data.user.user_metadata?.role === "organizer" ? "pending" : "approved",
           }, { onConflict: "id" })
-          .select("role, organizer_status, is_banned, full_name, rejection_reason")
+          .select("email, role, organizer_status, is_banned, full_name, rejection_reason")
           .single();
 
         if (createErr || !newProf) {
