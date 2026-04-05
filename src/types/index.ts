@@ -21,7 +21,7 @@ export interface Profile {
   hackathons_participated: number;
   best_rank?: number;
   is_banned: boolean;
-  email_verified: boolean;
+  email_verified?: boolean;
   created_at: string;
 }
 

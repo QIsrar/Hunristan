@@ -46,7 +46,7 @@ export default function HackathonDetail() {
 
       const [{ data: hack }, { data: probs }] = await Promise.all([
         supabase.from("hackathons").select("*,profiles(full_name,organization)").eq("id", id).single(),
-        supabase.from("problems").select("id,title,difficulty,points,order_index").eq("hackathon_id", id).order("order_index"),
+        supabase.from("problems").select("*").eq("hackathon_id", id).order("order_index"),
       ]);
 
       if (hack) {
@@ -60,7 +60,7 @@ export default function HackathonDetail() {
 
       if (user) {
         const { data: reg } = await supabase.from("registrations")
-          .select("id,payment_status,payment_screenshot_url").eq("hackathon_id", id).eq("user_id", user.id).maybeSingle();
+          .select("*").eq("hackathon_id", id).eq("user_id", user.id).maybeSingle();
         if (reg) {
           setRegistered(true);
           setPaymentStatus(reg.payment_status);
