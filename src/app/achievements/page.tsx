@@ -44,7 +44,7 @@ export default function AchievementsPage() {
     });
   }, []);
 
-  const categories = [...new Set(ALL_BADGES.map(b => b.category))];
+const categories = Array.from(new Set(ALL_BADGES.map(b => b.category)));
   const totalPoints = earnedIds.reduce((sum, id) => {
     const badge = ALL_BADGES.find(b => b.id === id);
     return sum + (badge?.points || 0);
