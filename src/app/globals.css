@@ -191,23 +191,44 @@ body {
 }
 
 @layer components {
-  /* Input styles */
+  /* Input styles - PROMINENT */
   .input-glass {
-    background: rgba(17, 24, 39, 0.8);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(17, 24, 39, 0.9);
+    border: 2px solid rgba(0, 229, 255, 0.4);
     color: var(--text);
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    padding: 0.875rem 1.25rem;
     font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
     transition: all 0.3s ease;
     width: 100%;
   }
+  
+  [data-theme="light"] .input-glass {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(8, 145, 178, 0.5);
+    color: #1a1a1a;
+  }
+  
   .input-glass:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+    border-width: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.15);
+    background: rgba(17, 24, 39, 1);
   }
-  .input-glass::placeholder { color: var(--muted); }
+  
+  [data-theme="light"] .input-glass:focus {
+    border-color: #0891b2;
+    box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.15);
+    background: rgba(255, 255, 255, 1);
+  }
+  
+  .input-glass::placeholder { 
+    color: var(--muted);
+    font-weight: 500;
+  }
 }
 
 /* Badge styles */
