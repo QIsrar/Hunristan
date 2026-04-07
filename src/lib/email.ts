@@ -12,6 +12,61 @@ interface OrganizerDecisionEmailOptions {
   reason?: string;
 }
 
+interface EmailVerificationOptions {
+  to: string;
+  name: string;
+  token: string;
+}
+
+export async function sendEmailVerification(opts: EmailVerificationOptions) {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, NEXT_PUBLIC_APP_URL } = process.env;
+
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    console.log("SMTP not configured — skipping email verification");
+    return;
+  }
+
+  const nodemailer = await import("nodemailer");
+  const transporter = nodemailer.default.createTransport({
+    host: SMTP_HOST,
+    port: parseInt(SMTP_PORT || "587"),
+    secure: SMTP_PORT === "465",
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+
+  const appUrl = NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const verificationUrl = `${appUrl}/auth/verify-email?token=${opts.token}`;
+  const from = EMAIL_FROM || `Smart Hunristan <${SMTP_USER}>`;
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 580px; margin: 0 auto; background: #060910; color: #f1f5f9; border-radius: 12px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #00e5ff22, #7c3aed22); padding: 40px 32px; text-align: center; border-bottom: 1px solid #1f2937;">
+        <div style="font-size: 42px; margin-bottom: 8px;">⚡</div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #00e5ff, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Smart Hunristan</h1>
+      </div>
+      <div style="padding: 32px;">
+        <h2 style="color: #00e5ff; margin-top: 0;">✉️ Verify Your Email</h2>
+        <p style="color: #9ca3af; line-height: 1.6;">Hi <strong style="color: #f1f5f9;">${opts.name}</strong>,</p>
+        <p style="color: #9ca3af; line-height: 1.6;">Thank you for signing up at Smart Hunristan! To complete your registration, please verify your email address by clicking the button below.</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${verificationUrl}" style="background: linear-gradient(135deg, #00e5ff, #0099b3); color: #060910; font-weight: 700; padding: 12px 32px; border-radius: 8px; text-decoration: none; display: inline-block; font-size: 14px;">
+            Verify Email Address →
+          </a>
+        </div>
+        <p style="color: #6b7280; font-size: 13px; text-align: center; margin-top: 20px;">Or copy and paste this link in your browser:<br><span style="color: #9ca3af; word-break: break-all; font-size: 12px;">${verificationUrl}</span></p>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 24px; border-top: 1px solid #1f2937; padding-top: 16px;">This link expires in 24 hours. If you didn't sign up, you can safely ignore this email.</p>
+      </div>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to: opts.to,
+    subject: "✉️ Verify Your Email — Smart Hunristan",
+    html,
+  });
+}
+
 export async function sendOrganizerDecisionEmail(opts: OrganizerDecisionEmailOptions) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, NEXT_PUBLIC_APP_URL } = process.env;
 

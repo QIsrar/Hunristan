@@ -50,7 +50,20 @@ CREATE TABLE profiles (
 );
 
 -- ================================================================
--- 2. HACKATHONS
+-- 2. EMAIL VERIFICATION TOKENS
+-- ================================================================
+CREATE TABLE email_verification_tokens (
+  id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  token           TEXT NOT NULL UNIQUE,
+  expires_at      TIMESTAMPTZ NOT NULL,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  INDEX idx_token (token),
+  INDEX idx_user_id (user_id)
+);
+
+-- ================================================================
+-- 3. HACKATHONS
 -- ================================================================
 CREATE TABLE hackathons (
   id                UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -82,7 +95,7 @@ CREATE TABLE hackathons (
 );
 
 -- ================================================================
--- 3. REGISTRATIONS
+-- 4. REGISTRATIONS
 -- ================================================================
 CREATE TABLE registrations (
   id                          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -99,7 +112,7 @@ CREATE TABLE registrations (
 );
 
 -- ================================================================
--- 4. TEAMS
+-- 5. TEAMS
 -- ================================================================
 CREATE TABLE teams (
   id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -121,7 +134,7 @@ CREATE TABLE team_members (
 );
 
 -- ================================================================
--- 5. PROBLEMS
+-- 6. PROBLEMS
 -- ================================================================
 CREATE TABLE problems (
   id               UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -146,7 +159,7 @@ CREATE TABLE problems (
 );
 
 -- ================================================================
--- 6. TEST CASES
+-- 7. TEST CASES
 -- NOTE: expected_output for hidden test cases is NEVER returned to
 --       the client via RLS. All grading happens server-side in
 --       /api/submit using the Supabase service-role client.
@@ -161,7 +174,7 @@ CREATE TABLE test_cases (
 );
 
 -- ================================================================
--- 7. SUBMISSIONS
+-- 8. SUBMISSIONS
 -- ================================================================
 CREATE TABLE submissions (
   id                  UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -191,7 +204,7 @@ CREATE TABLE submissions (
 );
 
 -- ================================================================
--- 8. LEADERBOARD
+-- 9. LEADERBOARD
 -- ================================================================
 CREATE TABLE leaderboard (
   id                  UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -207,7 +220,7 @@ CREATE TABLE leaderboard (
 );
 
 -- ================================================================
--- 9. NOTIFICATIONS
+-- 10. NOTIFICATIONS
 -- ================================================================
 CREATE TABLE notifications (
   id         UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -221,7 +234,7 @@ CREATE TABLE notifications (
 );
 
 -- ================================================================
--- 10. SECURITY LOGS
+-- 11. SECURITY LOGS
 -- ================================================================
 CREATE TABLE security_logs (
   id             UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -234,7 +247,7 @@ CREATE TABLE security_logs (
 );
 
 -- ================================================================
--- 11. ANNOUNCEMENTS
+-- 12. ANNOUNCEMENTS
 -- ================================================================
 CREATE TABLE announcements (
   id         UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -247,7 +260,7 @@ CREATE TABLE announcements (
 );
 
 -- ================================================================
--- 12. MENTORS
+-- 13. MENTORS
 -- ================================================================
 CREATE TABLE mentors (
   id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -262,7 +275,7 @@ CREATE TABLE mentors (
 );
 
 -- ================================================================
--- 13. PROJECTS
+-- 14. PROJECTS
 -- ================================================================
 CREATE TABLE projects (
   id            UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -279,7 +292,7 @@ CREATE TABLE projects (
 );
 
 -- ================================================================
--- 14. ACHIEVEMENTS (definitions)
+-- 15. ACHIEVEMENTS (definitions)
 -- ================================================================
 CREATE TABLE achievements (
   id          TEXT PRIMARY KEY,
@@ -292,7 +305,7 @@ CREATE TABLE achievements (
 );
 
 -- ================================================================
--- 15. USER_ACHIEVEMENTS (earned badges)
+-- 16. USER_ACHIEVEMENTS (earned badges)
 -- ================================================================
 CREATE TABLE user_achievements (
   id             UUID DEFAULT uuid_generate_v4() PRIMARY KEY,

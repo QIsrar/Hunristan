@@ -95,6 +95,22 @@ export default function SignUpForm() {
         if (Object.keys(updateData).length > 0) {
           await supabase.from("profiles").update(updateData).eq("id", userId);
         }
+
+        // Send verification email
+        try {
+          await fetch("/api/send-verification-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId,
+              email,
+              fullName,
+            }),
+          });
+        } catch (emailError) {
+          console.error("Failed to send verification email:", emailError);
+          toast.error("Account created, but verification email failed. Please request it again later.");
+        }
       }
 
       setStep(3);
@@ -185,51 +201,58 @@ export default function SignUpForm() {
     return (
       <div className="glass rounded-2xl p-8 text-center animate-slide-up">
         <div className={`w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center ${
-          role === "participant" ? "bg-green-500/10" : "bg-amber-500/10"
+          "bg-cyan-500/10"
         }`}>
-          {role === "participant"
-            ? <CheckCircle2 size={32} className="text-green-400" />
-            : <Clock size={32} className="text-amber-400" />
-          }
+          <CheckCircle2 size={32} className="text-cyan-400" />
         </div>
         <h1 className="font-display text-2xl font-bold mb-3">
-          {role === "participant" ? "Welcome to Smart Hunristan! 🎉" : "Application Submitted!"}
+          Check Your Email! ✉️
         </h1>
         {role === "participant" ? (
           <>
-            <p className="text-muted text-sm mb-6 leading-relaxed">
-              Your account is ready. Please check your email to verify your address,
-              then dive in and start competing!
+            <p className="text-muted text-sm mb-2 leading-relaxed">
+              We've sent a verification link to
+            </p>
+            <p className="text-accent text-sm font-semibold mb-6 break-all">
+              {email}
+            </p>
+            <div className="glass rounded-xl p-4 bg-cyan-500/5 border border-cyan-500/20 text-left mb-6">
+              <div className="text-xs text-cyan-400 uppercase tracking-wider mb-3 font-semibold">📋 What to do next:</div>
+              {[
+                "Open your email inbox",
+                "Click the verification link in the email",
+                "Your account will be fully activated",
+                "Sign in and start competing!",
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <div className="w-5 h-5 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold">
+                    {i + 1}
+                  </div>
+                  <span className="text-sm text-muted">{s}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted mb-6">
+              <strong>Don't see the email?</strong> Check your spam folder or 
+              {" "}<button onClick={() => setStep(3)} className="text-accent hover:underline">request a new link</button>
             </p>
             <button onClick={() => router.push("/auth/signin")} className="btn-primary w-full">
-              Sign In to Your Account
+              Done - Go to Sign In
             </button>
           </>
         ) : (
           <>
             <p className="text-muted text-sm mb-2 leading-relaxed">
-              Your organizer application is under review.
+              We've sent a verification link to
+            </p>
+            <p className="text-accent text-sm font-semibold mb-6 break-all">
+              {email}
             </p>
             <p className="text-muted text-sm mb-6 leading-relaxed">
-              Our admin team will review your details and approve your account,
+              Please verify your email first, then our admin team will review your organizer application,
               typically within <span className="text-text font-medium">24–48 hours</span>.
               You'll receive an email when approved.
             </p>
-            <div className="glass rounded-xl p-4 text-left mb-6">
-              <div className="text-xs text-muted uppercase tracking-wider mb-2">What happens next</div>
-              {[
-                "Admin reviews your application",
-                "You receive approval email",
-                "Sign in and create your first hackathon",
-              ].map((s, i) => (
-                <div key={i} className="flex items-center gap-3 py-1.5">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-xs text-accent font-bold">
-                    {i + 1}
-                  </div>
-                  <span className="text-sm">{s}</span>
-                </div>
-              ))}
-            </div>
             <Link href="/" className="btn-secondary w-full flex items-center justify-center">
               Back to Home
             </Link>

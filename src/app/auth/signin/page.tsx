@@ -37,7 +37,7 @@ function SignInForm() {
       // Fetch profile to check status and route
       const { data: profile, error: profErr } = await supabase
         .from("profiles")
-        .select("email, role, organizer_status, is_banned, full_name, rejection_reason")
+        .select("email, role, organizer_status, is_banned, full_name, rejection_reason, email_verified")
         .eq("id", data.user.id)
         .single();
 
@@ -51,8 +51,9 @@ function SignInForm() {
             full_name: data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User",
             role: data.user.user_metadata?.role || "participant",
             organizer_status: data.user.user_metadata?.role === "organizer" ? "pending" : "approved",
+            email_verified: false,
           }, { onConflict: "id" })
-          .select("email, role, organizer_status, is_banned, full_name, rejection_reason")
+          .select("email, role, organizer_status, is_banned, full_name, rejection_reason, email_verified")
           .single();
 
         if (createErr || !newProf) {
@@ -65,6 +66,14 @@ function SignInForm() {
         // redirect using new profile
         toast.success(`Welcome, ${newProf.full_name?.split(" ")[0]}! 👋`);
         router.push(`/dashboard/${newProf.role}`);
+        return;
+      }
+
+      // Check if email is verified - MUST be before other checks
+      if (!profile.email_verified) {
+        toast.error("Please verify your email first. Check your inbox for the verification link.");
+        await supabase.auth.signOut();
+        router.push(`/auth/verify-email-prompt?email=${encodeURIComponent(profile.email)}`);
         return;
       }
 
