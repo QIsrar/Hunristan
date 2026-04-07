@@ -2,15 +2,16 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Navbar from "@/components/layout/Navbar";
-import { Search, ExternalLink, Github, Trophy, Tag, Filter, Star, Zap, Leaf, Brain, Users, MapPin } from "lucide-react";
+import { Search, ExternalLink, Github, Trophy, Star } from "lucide-react";
+import Image from "next/image";
 
 const SAMPLE_PROJECTS = [
-  { id:"1", team_name:"AlphaCoders", project_title:"MedAI - Smart Diagnosis Assistant", description:"An AI-powered web app that helps rural doctors diagnose common diseases using symptoms and patient history. Won 1st place at HealthTech Hackathon 2024.", demo_url:"https://example.com", github_url:"https://github.com", technologies:["Python","FastAPI","React","TensorFlow"], rank_achieved:1, is_featured:true, hackathons:{title:"HealthTech Hackathon 2024"}, category:"AI", icon:"🏥" },
-  { id:"2", team_name:"ByteBuilders", project_title:"EduSync - Collaborative Learning Platform", description:"Real-time collaborative coding environment for students and teachers. Features AI pair programming, automatic grading, and progress tracking.", demo_url:"https://example.com", github_url:"https://github.com", technologies:["Next.js","WebSockets","MongoDB","OpenAI"], rank_achieved:1, is_featured:true, hackathons:{title:"EdTech Challenge 2024"}, category:"Education", icon:"📚" },
-  { id:"3", team_name:"DevSquad", project_title:"GreenRoute - Carbon-Optimized Navigation", description:"Navigation app that calculates the most eco-friendly routes, tracking real-time CO2 savings. Integrated with Pakistan's public transport data.", demo_url:null, github_url:"https://github.com", technologies:["React Native","Node.js","Google Maps API"], rank_achieved:2, is_featured:false, hackathons:{title:"ClimateHack 2023"}, category:"Environment", icon:"🌱" },
-  { id:"4", team_name:"CodeCraft", project_title:"FarmBot - Agricultural IoT Dashboard", description:"IoT platform for small farmers to monitor soil conditions, weather, and automate irrigation using cheap sensors and SMS alerts.", demo_url:"https://example.com", github_url:"https://github.com", technologies:["Vue.js","Node.js","MQTT","PostgreSQL"], rank_achieved:3, is_featured:false, hackathons:{title:"AgriTech Pakistan 2023"}, category:"Agriculture", icon:"🌾" },
-  { id:"5", team_name:"NeuralNinjas", project_title:"SafeCity - Crime Prediction & Prevention", description:"ML model trained on historical crime data to predict hotspots and help law enforcement with resource allocation. 87% accuracy.", demo_url:null, github_url:"https://github.com", technologies:["Python","scikit-learn","Django","D3.js"], rank_achieved:1, is_featured:true, hackathons:{title:"CivicTech Hackathon 2023"}, category:"Safety", icon:"🛡️" },
-  { id:"6", team_name:"WebWarriors", project_title:"LangBridge - Real-Time Urdu Translator", description:"Browser extension that translates web pages to Urdu in real-time using a fine-tuned NLP model optimized for Pakistani context and dialects.", demo_url:"https://example.com", github_url:"https://github.com", technologies:["JavaScript","Python","HuggingFace","FastAPI"], rank_achieved:2, is_featured:false, hackathons:{title:"NLP Challenge 2024"}, category:"Language", icon:"🗣️" },
+  { id:"1", team_name:"AlphaCoders", project_title:"MedAI - Smart Diagnosis Assistant", description:"An AI-powered web app that helps rural doctors diagnose common diseases using symptoms and patient history. Won 1st place at HealthTech Hackathon 2024.", demo_url:"https://example.com", github_url:"https://github.com", technologies:["Python","FastAPI","React","TensorFlow"], rank_achieved:1, is_featured:true, hackathons:{title:"HealthTech Hackathon 2024"}, category:"AI", image:"https://images.unsplash.com/photo-1576091160550-112173f7fd91?w=400&h=300&fit=crop" },
+  { id:"2", team_name:"ByteBuilders", project_title:"EduSync - Collaborative Learning Platform", description:"Real-time collaborative coding environment for students and teachers. Features AI pair programming, automatic grading, and progress tracking.", demo_url:"https://example.com", github_url:"https://github.com", technologies:["Next.js","WebSockets","MongoDB","OpenAI"], rank_achieved:1, is_featured:true, hackathons:{title:"EdTech Challenge 2024"}, category:"Education", image:"https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop" },
+  { id:"3", team_name:"DevSquad", project_title:"GreenRoute - Carbon-Optimized Navigation", description:"Navigation app that calculates the most eco-friendly routes, tracking real-time CO2 savings. Integrated with Pakistan's public transport data.", demo_url:null, github_url:"https://github.com", technologies:["React Native","Node.js","Google Maps API"], rank_achieved:2, is_featured:false, hackathons:{title:"ClimateHack 2023"}, category:"Environment", image:"https://images.unsplash.com/photo-1577720643272-265f434e74f4?w=400&h=300&fit=crop" },
+  { id:"4", team_name:"CodeCraft", project_title:"FarmBot - Agricultural IoT Dashboard", description:"IoT platform for small farmers to monitor soil conditions, weather, and automate irrigation using cheap sensors and SMS alerts.", demo_url:"https://example.com", github_url:"https://github.com", technologies:["Vue.js","Node.js","MQTT","PostgreSQL"], rank_achieved:3, is_featured:false, hackathons:{title:"AgriTech Pakistan 2023"}, category:"Agriculture", image:"https://images.unsplash.com/photo-1625246333195-78d9c38ad576?w=400&h=300&fit=crop" },
+  { id:"5", team_name:"NeuralNinjas", project_title:"SafeCity - Crime Prediction & Prevention", description:"ML model trained on historical crime data to predict hotspots and help law enforcement with resource allocation. 87% accuracy.", demo_url:null, github_url:"https://github.com", technologies:["Python","scikit-learn","Django","D3.js"], rank_achieved:1, is_featured:true, hackathons:{title:"CivicTech Hackathon 2023"}, category:"Safety", image:"https://images.unsplash.com/photo-1557821552-17105176677c?w=400&h=300&fit=crop" },
+  { id:"6", team_name:"WebWarriors", project_title:"LangBridge - Real-Time Urdu Translator", description:"Browser extension that translates web pages to Urdu in real-time using a fine-tuned NLP model optimized for Pakistani context and dialects.", demo_url:"https://example.com", github_url:"https://github.com", technologies:["JavaScript","Python","HuggingFace","FastAPI"], rank_achieved:2, is_featured:false, hackathons:{title:"NLP Challenge 2024"}, category:"Language", image:"https://images.unsplash.com/photo-1461749280684-ddefd3083d60?w=400&h=300&fit=crop" },
 ];
 
 const ALL_TECH = ["Python","JavaScript","React","Next.js","Node.js","TensorFlow","FastAPI","MongoDB","PostgreSQL","React Native","Vue.js"];
@@ -81,30 +82,39 @@ export default function ProjectsPage() {
           {filtered.map((project) => {
             const rank = rankBadge(project.rank_achieved);
             return (
-              <div key={project.id} className={`group rounded-2xl overflow-hidden flex flex-col border transition-all duration-300 ${project.is_featured ? "border-accent3/50 bg-accent3/5 shadow-lg shadow-accent3/20" : "border-border/20 bg-surface/40"} hover:border-accent/50 hover:shadow-lg`}>
-                {/* Icon Section with Featured Badge */}
-                <div className="relative h-48 bg-gradient-to-br from-card to-surface flex items-center justify-center overflow-hidden">
+              <div key={project.id} className={`group rounded-xl overflow-hidden flex flex-col border-2 transition-all duration-300 ${project.is_featured ? "border-accent3 bg-surface shadow-2xl shadow-accent3/30" : "border-border/60 bg-surface/80"} hover:border-accent hover:shadow-2xl hover:shadow-accent/20 dark:border-border/50`}>
+                {/* Image Section with Featured Badge */}
+                <div className="relative h-48 bg-gradient-to-br from-card to-surface overflow-hidden">
                   {/* Featured Badge - LEFT SIDE */}
                   {project.is_featured && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-accent3 to-accent via-accent3"></div>
+                    <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-accent3 to-accent via-accent3 z-10"></div>
                   )}
                   
-                  {/* Large icon in center */}
-                  <div className="text-8xl group-hover:scale-110 transition-transform duration-300">{project.icon}</div>
+                  {/* Image */}
+                  <Image
+                    src={project.image}
+                    alt={project.project_title}
+                    width={400}
+                    height={300}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
                 </div>
 
                 {/* Content */}
-                <div className="p-6 flex-1 flex flex-col">
+                <div className="p-5 flex-1 flex flex-col">
                   {/* Category & Title */}
-                  <div className="mb-4">
-                    <div className="inline-block px-2.5 py-1 rounded-md bg-accent/10 border border-accent/30 mb-2">
-                      <span className="text-xs font-semibold text-accent uppercase tracking-widest">{project.category}</span>
+                  <div className="mb-3">
+                    <div className="inline-block px-2.5 py-1 rounded-md bg-accent/15 border border-accent/50 mb-2.5">
+                      <span className="text-xs font-bold text-accent uppercase tracking-widest dark:text-accent">{project.category}</span>
                     </div>
-                    <h3 className="font-display font-bold text-lg leading-tight text-text mt-2">{project.project_title}</h3>
+                    <h3 className="font-display font-bold text-base leading-tight text-text dark:text-slate-100">{project.project_title}</h3>
                   </div>
                   
                   {/* Description */}
-                  <p className="text-muted text-sm leading-relaxed mb-5 flex-1 line-clamp-3">{project.description}</p>
+                  <p className="text-muted text-xs leading-relaxed mb-4 flex-1 line-clamp-3 dark:text-slate-400">{project.description}</p>
 
                   {/* Rank Badge */}
                   {rank && (
@@ -114,29 +124,29 @@ export default function ProjectsPage() {
                   )}
 
                   {/* Technologies */}
-                  <div className="flex flex-wrap gap-2 mb-5 pb-5 border-b border-border/30">
+                  <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b-2 border-border/50 dark:border-border/30">
                     {project.technologies.slice(0, 3).map(t => (
-                      <span key={t} className="text-xs px-3 py-1 rounded-full bg-surface border border-border/50 text-muted font-mono hover:border-accent/50 transition-colors">{t}</span>
+                      <span key={t} className="text-xs px-2.5 py-1 rounded-md bg-card border border-border/80 text-text font-mono hover:border-accent/60 transition-colors dark:bg-surface/80 dark:border-border/40 dark:text-slate-300">{t}</span>
                     ))}
                     {project.technologies.length > 3 && (
-                      <span className="text-xs px-3 py-1 rounded-full bg-surface border border-border/50 text-muted font-mono">+{project.technologies.length - 3}</span>
+                      <span className="text-xs px-2.5 py-1 rounded-md bg-card border border-border/80 text-text font-mono dark:bg-surface/80 dark:border-border/40 dark:text-slate-300">+{project.technologies.length - 3}</span>
                     )}
                   </div>
 
                   {/* Hackathon */}
-                  <div className="text-xs text-muted mb-5">
-                    <span className="block">🏆 {project.hackathons?.title}</span>
+                  <div className="text-xs text-muted mb-5 dark:text-slate-400">
+                    <span className="block font-medium">🏆 {project.hackathons?.title}</span>
                   </div>
 
                   {/* Links */}
-                  <div className="flex items-center gap-4 mt-auto">
+                  <div className="flex items-center gap-5 mt-auto pt-3 border-t-2 border-border/50 dark:border-border/30">
                     {project.demo_url && (
-                      <a href={project.demo_url} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-accent hover:text-accent3 font-semibold transition-colors">
+                      <a href={project.demo_url} target="_blank" rel="noopener" className="flex items-center gap-1.5 text-sm font-bold text-accent hover:text-accent3 transition-colors dark:text-cyan-400">
                         <ExternalLink size={16} /> Demo
                       </a>
                     )}
                     {project.github_url && (
-                      <a href={project.github_url} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-muted hover:text-text font-semibold transition-colors">
+                      <a href={project.github_url} target="_blank" rel="noopener" className="flex items-center gap-1.5 text-sm font-bold text-muted hover:text-text transition-colors dark:text-slate-300 dark:hover:text-slate-100">
                         <Github size={16} /> Code
                       </a>
                     )}
