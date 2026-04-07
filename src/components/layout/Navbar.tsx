@@ -9,13 +9,15 @@ import type { Profile } from "@/types";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const themeMenuRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   const isActive = (href: string) => {
@@ -36,6 +38,7 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownOpen(false);
+      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target as Node)) setThemeMenuOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => { window.removeEventListener("scroll", handleScroll); document.removeEventListener("mousedown", handleClickOutside); };
@@ -72,18 +75,47 @@ export default function Navbar() {
           ))}
         </div>
         <div className="hidden md:flex items-center gap-3">
-          {/* Theme toggle button */}
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
-            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-          >
-            {theme === "dark" ? (
-              <Sun size={18} className="text-muted hover:text-accent" />
-            ) : (
-              <Moon size={18} className="text-muted hover:text-accent" />
+          {/* Theme menu */}
+          <div className="relative" ref={themeMenuRef}>
+            <button
+              onClick={() => setThemeMenuOpen(!themeMenuOpen)}
+              className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+              title="Change theme"
+            >
+              {theme === "dark" ? (
+                <Moon size={18} className="text-muted hover:text-accent" />
+              ) : theme === "light" ? (
+                <Sun size={18} className="text-muted hover:text-accent" />
+              ) : (
+                <Sun size={18} className="text-muted hover:text-accent opacity-60" />
+              )}
+            </button>
+            {themeMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 glass rounded-lg overflow-hidden shadow-2xl border border-white/8 z-50">
+                <button
+                  onClick={() => { setTheme("auto"); setThemeMenuOpen(false); }}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${theme === "auto" ? "bg-accent/10 text-accent" : "hover:bg-white/5 text-muted"}`}
+                >
+                  <span>Auto</span>
+                  {theme === "auto" && <span className="text-xs">✓</span>}
+                </button>
+                <button
+                  onClick={() => { setTheme("light"); setThemeMenuOpen(false); }}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${theme === "light" ? "bg-accent/10 text-accent" : "hover:bg-white/5 text-muted"}`}
+                >
+                  <span>Light</span>
+                  {theme === "light" && <span className="text-xs">✓</span>}
+                </button>
+                <button
+                  onClick={() => { setTheme("dark"); setThemeMenuOpen(false); }}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${theme === "dark" ? "bg-accent/10 text-accent" : "hover:bg-white/5 text-muted"}`}
+                >
+                  <span>Dark</span>
+                  {theme === "dark" && <span className="text-xs">✓</span>}
+                </button>
+              </div>
             )}
-          </button>
+          </div>
           
           {profile ? (
             <>
@@ -139,13 +171,30 @@ export default function Navbar() {
           ))}
           
           {/* Theme toggle for mobile */}
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-2 text-sm py-2 text-muted hover:text-accent transition-colors mt-2"
-          >
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-            {theme === "dark" ? "Light Mode" : "Dark Mode"}
-          </button>
+          <div className="border-t border-white/5 pt-3 mt-3 space-y-1">
+            <div className="text-xs text-muted font-medium uppercase tracking-widest px-4 py-2">Theme</div>
+            <button
+              onClick={() => { setTheme("auto"); setMobileOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-2 text-sm transition-colors ${theme === "auto" ? "text-accent bg-accent/10" : "text-muted hover:text-accent"}`}
+            >
+              <span>Auto</span>
+              {theme === "auto" && <span className="text-xs">✓</span>}
+            </button>
+            <button
+              onClick={() => { setTheme("light"); setMobileOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-2 text-sm transition-colors ${theme === "light" ? "text-accent bg-accent/10" : "text-muted hover:text-accent"}`}
+            >
+              <span>Light</span>
+              {theme === "light" && <span className="text-xs">✓</span>}
+            </button>
+            <button
+              onClick={() => { setTheme("dark"); setMobileOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-2 text-sm transition-colors ${theme === "dark" ? "text-accent bg-accent/10" : "text-muted hover:text-accent"}`}
+            >
+              <span>Dark</span>
+              {theme === "dark" && <span className="text-xs">✓</span>}
+            </button>
+          </div>
           
           <div className="pt-3 border-t border-white/5 mt-3">
             {profile ? (
