@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { ThemeScript } from "@/components/ThemeScript";
 
 export const metadata: Metadata = {
   title: "Smart Hunristan — Hackathon Platform",
@@ -13,9 +12,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <ThemeScript />
-      </head>
       <body className="antialiased">
         <ThemeProvider>
           <div className="scan-line" />
