@@ -1,75 +1,10 @@
 "use client";
 
-export const dynamic = "force-dynamic";
+import { Suspense } from "react";
+import VerifyEmailPromptContent from "./verify-email-prompt-content";
+import { Mail, Loader2 } from "lucide-react";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
-import { Mail, CheckCircle2, Loader2 } from "lucide-react";
-import Link from "next/link";
-import toast from "react-hot-toast";
-
-export default function VerifyEmailPromptPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const email = searchParams.get("email") || "";
-  
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-
-  const handleResend = async () => {
-    if (!email) {
-      toast.error("Email not found");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/resend-verification-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || "Failed to resend verification email");
-        return;
-      }
-
-      setSent(true);
-      toast.success("Verification email sent! Check your inbox.");
-      
-      setTimeout(() => {
-        router.push("/auth/signin");
-      }, 3000);
-    } catch (error) {
-      toast.error("Failed to resend verification email");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (sent) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-black p-4">
-        <div className="glass rounded-2xl p-8 max-w-md w-full text-center">
-          <CheckCircle2 size={48} className="text-green-400 mx-auto mb-4" />
-          <h1 className="font-display text-2xl font-bold mb-2 text-green-400">Email Sent!</h1>
-          <p className="text-muted mb-6">Check your inbox for the verification link.</p>
-          <p className="text-sm text-muted">Redirecting to sign in...</p>
-          <Link 
-            href="/auth/signin" 
-            className="mt-6 btn-primary w-full inline-block"
-          >
-            Go to Sign In
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
+function VerifyEmailPromptLoading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-black p-4">
       <div className="glass rounded-2xl p-8 max-w-md w-full">
@@ -78,6 +13,22 @@ export default function VerifyEmailPromptPage() {
         </div>
         
         <h1 className="font-display text-2xl font-bold text-center mb-2">Email Not Verified</h1>
+        <p className="text-muted text-sm text-center mb-6">Loading...</p>
+        <div className="flex justify-center">
+          <Loader2 size={24} className="text-cyan-400 animate-spin" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function VerifyEmailPromptPage() {
+  return (
+    <Suspense fallback={<VerifyEmailPromptLoading />}>
+      <VerifyEmailPromptContent />
+    </Suspense>
+  );
+}
         <p className="text-muted text-sm text-center mb-6 leading-relaxed">
           Your email address needs to be verified before you can sign in.
         </p>

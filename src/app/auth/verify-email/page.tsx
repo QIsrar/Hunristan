@@ -1,69 +1,28 @@
 "use client";
 
-export const dynamic = "force-dynamic";
+import { Suspense } from "react";
+import VerifyEmailContent from "./verify-email-content";
+import { Loader2 } from "lucide-react";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import Link from "next/link";
-import toast from "react-hot-toast";
-
-export default function VerifyEmailPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const token = searchParams.get("token");
-
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Invalid verification link - token is missing.");
-      return;
-    }
-
-    const verifyEmail = async () => {
-      try {
-        const res = await fetch("/api/verify-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          setStatus("error");
-          setMessage(data.error || "Failed to verify email");
-        } else {
-          setStatus("success");
-          setMessage("Your email has been verified successfully!");
-          toast.success("Email verified!");
-          setTimeout(() => {
-            router.push("/auth/signin");
-          }, 3000);
-        }
-      } catch (error) {
-        setStatus("error");
-        setMessage("An error occurred while verifying your email");
-        console.error(error);
-      }
-    };
-
-    verifyEmail();
-  }, [token, router]);
-
+function VerifyEmailLoading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-black p-4">
       <div className="glass rounded-2xl p-8 max-w-md w-full text-center">
-        {status === "loading" && (
-          <>
-            <Loader2 size={48} className="text-accent mx-auto mb-4 animate-spin" />
-            <h1 className="font-display text-2xl font-bold mb-2">Verifying Your Email</h1>
-            <p className="text-muted">Please wait while we verify your email address...</p>
-          </>
-        )}
+        <Loader2 size={48} className="text-accent mx-auto mb-4 animate-spin" />
+        <h1 className="font-display text-2xl font-bold mb-2">Verifying Your Email</h1>
+        <p className="text-muted">Please wait while we verify your email address...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<VerifyEmailLoading />}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
 
         {status === "success" && (
           <>
