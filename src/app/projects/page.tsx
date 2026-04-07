@@ -81,66 +81,63 @@ export default function ProjectsPage() {
           {filtered.map((project) => {
             const rank = rankBadge(project.rank_achieved);
             return (
-              <div key={project.id} className={`glass glass-hover rounded-2xl overflow-hidden flex flex-col group border ${project.is_featured ? "border-accent3/30 shadow-lg shadow-accent3/10" : "border-border/30"}`}>
-                {/* Banner with Icon */}
-                <div className="h-40 bg-gradient-to-br from-surface to-card relative flex items-center justify-center overflow-hidden">
-                  {/* Background decoration */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-2 right-2 text-6xl group-hover:scale-110 transition-transform duration-300">{project.icon}</div>
-                  </div>
+              <div key={project.id} className={`group rounded-2xl overflow-hidden flex flex-col border transition-all duration-300 ${project.is_featured ? "border-accent3/50 bg-accent3/5 shadow-lg shadow-accent3/20" : "border-border/20 bg-surface/40"} hover:border-accent/50 hover:shadow-lg`}>
+                {/* Icon Section with Featured Badge */}
+                <div className="relative h-48 bg-gradient-to-br from-card to-surface flex items-center justify-center overflow-hidden">
+                  {/* Featured Badge - LEFT SIDE */}
+                  {project.is_featured && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-accent3 to-accent via-accent3"></div>
+                  )}
                   
                   {/* Large icon in center */}
-                  <div className="text-7xl group-hover:scale-105 transition-transform duration-300">{project.icon}</div>
-                  
-                  {/* Badges - Top right */}
-                  <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-                    {project.is_featured && (
-                      <div className="flex items-center gap-1 bg-accent/90 text-bg px-2.5 py-1 rounded-full text-xs font-semibold">
-                        <Star size={12} fill="currentColor" /> Featured
-                      </div>
-                    )}
-                    {rank && (
-                      <div className={`bg-gradient-to-r ${rank.color} text-white px-2.5 py-1 rounded-full text-xs font-semibold`}>
-                        {rank.label}
-                      </div>
-                    )}
-                  </div>
+                  <div className="text-8xl group-hover:scale-110 transition-transform duration-300">{project.icon}</div>
                 </div>
 
                 {/* Content */}
-                <div className="p-5 flex-1 flex flex-col">
-                  <div className="mb-3">
-                    <div className="text-xs text-accent font-semibold uppercase tracking-widest mb-1">{project.category}</div>
-                    <h3 className="font-display font-bold text-sm leading-snug text-text">{project.project_title}</h3>
+                <div className="p-6 flex-1 flex flex-col">
+                  {/* Category & Title */}
+                  <div className="mb-4">
+                    <div className="inline-block px-2.5 py-1 rounded-md bg-accent/10 border border-accent/30 mb-2">
+                      <span className="text-xs font-semibold text-accent uppercase tracking-widest">{project.category}</span>
+                    </div>
+                    <h3 className="font-display font-bold text-lg leading-tight text-text mt-2">{project.project_title}</h3>
                   </div>
                   
-                  <p className="text-muted text-xs leading-relaxed mb-4 flex-1 line-clamp-3">{project.description}</p>
+                  {/* Description */}
+                  <p className="text-muted text-sm leading-relaxed mb-5 flex-1 line-clamp-3">{project.description}</p>
+
+                  {/* Rank Badge */}
+                  {rank && (
+                    <div className={`inline-block w-fit mb-4 bg-gradient-to-r ${rank.color} text-white px-3 py-1.5 rounded-lg text-xs font-bold`}>
+                      {rank.label}
+                    </div>
+                  )}
 
                   {/* Technologies */}
-                  <div className="flex flex-wrap gap-1.5 mb-4">
+                  <div className="flex flex-wrap gap-2 mb-5 pb-5 border-b border-border/30">
                     {project.technologies.slice(0, 3).map(t => (
-                      <span key={t} className="text-xs px-2 py-1 rounded-md bg-surface border border-border text-muted font-mono hover:border-accent/50 transition-colors">{t}</span>
+                      <span key={t} className="text-xs px-3 py-1 rounded-full bg-surface border border-border/50 text-muted font-mono hover:border-accent/50 transition-colors">{t}</span>
                     ))}
                     {project.technologies.length > 3 && (
-                      <span className="text-xs px-2 py-1 rounded-md bg-surface border border-border text-muted font-mono">+{project.technologies.length - 3}</span>
+                      <span className="text-xs px-3 py-1 rounded-full bg-surface border border-border/50 text-muted font-mono">+{project.technologies.length - 3}</span>
                     )}
                   </div>
 
                   {/* Hackathon */}
-                  <div className="text-xs text-muted mb-4 pb-4 border-t border-border/50">
-                    <span className="block mt-3">📊 {project.hackathons?.title}</span>
+                  <div className="text-xs text-muted mb-5">
+                    <span className="block">🏆 {project.hackathons?.title}</span>
                   </div>
 
                   {/* Links */}
-                  <div className="flex items-center gap-3 mt-auto pt-2 border-t border-border/30">
+                  <div className="flex items-center gap-4 mt-auto">
                     {project.demo_url && (
-                      <a href={project.demo_url} target="_blank" rel="noopener" className="flex items-center gap-1.5 text-xs text-accent hover:text-accent2 font-semibold transition-colors">
-                        <ExternalLink size={13} /> Demo
+                      <a href={project.demo_url} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-accent hover:text-accent3 font-semibold transition-colors">
+                        <ExternalLink size={16} /> Demo
                       </a>
                     )}
                     {project.github_url && (
-                      <a href={project.github_url} target="_blank" rel="noopener" className="flex items-center gap-1.5 text-xs text-muted hover:text-text font-semibold transition-colors">
-                        <Github size={13} /> Code
+                      <a href={project.github_url} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-muted hover:text-text font-semibold transition-colors">
+                        <Github size={16} /> Code
                       </a>
                     )}
                   </div>
