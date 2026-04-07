@@ -20,6 +20,7 @@ export default function SignUpForm() {
   const [role, setRole] = useState<Role>((searchParams.get("role") as Role) || "participant");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   // Shared
   const [fullName, setFullName] = useState("");
@@ -44,6 +45,36 @@ export default function SignUpForm() {
   const strengthLevel = password.length >= 12 ? 3 : password.length >= 8 ? 2 : password.length >= 1 ? 1 : 0;
   const strengthLabels = ["", "Weak", "Fair", "Strong"];
   const strengthColors = ["bg-border", "bg-red-500", "bg-yellow-500", "bg-green-500"];
+
+  const handleResendEmail = async () => {
+    if (!email) {
+      toast.error("Email not found");
+      return;
+    }
+
+    setResendLoading(true);
+    try {
+      const res = await fetch("/api/resend-verification-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to resend verification email");
+        return;
+      }
+
+      toast.success("Verification email sent! Check your inbox.");
+    } catch (error) {
+      toast.error("Failed to resend verification email");
+      console.error(error);
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,6 +237,12 @@ export default function SignUpForm() {
         }`}>
           <CheckCircle2 size={32} className="text-cyan-400" />
         </div>
+                onClick={handleResendEmail}
+                disabled={resendLoading}
+                className="text-accent hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resendLoading ? "Sending..." : "request a new link"}
+              
         <h1 className="font-display text-2xl font-bold mb-3">
           Check Your Email! ✉️
         </h1>
