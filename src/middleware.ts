@@ -11,6 +11,9 @@ const PUBLIC_ROUTES = [
   "/auth/forgot-password",
   "/auth/reset-password",
   "/about",
+  "/hackathons",
+  "/mentors",
+  "/projects",
   "/api/",
 ];
 
@@ -20,8 +23,6 @@ const PROTECTED_ROUTES = [
   "/arena",
   "/practice",
   "/profile",
-  "/hackathons",
-  "/projects",
 ];
 
 function isPublicRoute(pathname: string): boolean {

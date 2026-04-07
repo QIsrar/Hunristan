@@ -3,11 +3,13 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Bell, Shield, LogOut, User, ChevronDown, Code2, Menu, X, Settings } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
+import { Bell, Shield, LogOut, User, ChevronDown, Code2, Menu, X, Settings, Sun, Moon } from "lucide-react";
 import type { Profile } from "@/types";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -49,7 +51,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2">
           <Code2 size={22} className="text-accent" />
           <span className="font-display font-bold text-lg gradient-text tracking-wide">SMART HUNRISTAN</span>
-        <span className="hidden md:block text-[10px] text-muted font-medium tracking-widest uppercase ml-1 mt-0.5">Hackathon Platform</span>  
+          <span className="hidden md:block text-[10px] text-muted font-medium tracking-widest uppercase ml-1 mt-0.5">Hackathon Platform</span>
         </Link>
         <div className="hidden md:flex items-center gap-8 text-sm text-muted">
           {NAV_LINKS.map(link => (
@@ -69,7 +71,20 @@ export default function Navbar() {
             </Link>
           ))}
         </div>
-        <div className="hidden md:flex items-center gap-3">
+        <di/* Theme toggle button */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          >
+            {theme === "dark" ? (
+              <Sun size={18} className="text-muted hover:text-accent" />
+            ) : (
+              <Moon size={18} className="text-muted hover:text-accent" />
+            )}
+          </button>
+          
+          {v className="hidden md:flex items-center gap-3">
           {profile ? (
             <>
               <Link href="/notifications" className="relative p-2 rounded-lg hover:bg-white/5 transition-colors">
@@ -122,6 +137,16 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          
+          {/* Theme toggle for mobile */}
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-2 text-sm py-2 text-muted hover:text-accent transition-colors mt-2"
+          >
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </button>
+          
           <div className="pt-3 border-t border-white/5 mt-3">
             {profile ? (
               <div className="space-y-2">
