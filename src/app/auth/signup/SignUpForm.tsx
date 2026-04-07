@@ -42,9 +42,18 @@ export default function SignUpForm() {
   const [orgWebsite, setOrgWebsite] = useState("");
   const [whyOrganize, setWhyOrganize] = useState("");
 
-  const strengthLevel = password.length >= 12 ? 3 : password.length >= 8 ? 2 : password.length >= 1 ? 1 : 0;
-  const strengthLabels = ["", "Weak", "Fair", "Strong"];
-  const strengthColors = ["bg-border", "bg-red-500", "bg-yellow-500", "bg-green-500"];
+  // Password strength validation
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  const hasMinLength = password.length >= 8;
+
+  const strengthChecks = [hasUpperCase, hasLowerCase, hasDigit, hasSpecialChar, hasMinLength].filter(Boolean).length;
+  const strengthLevel = strengthChecks === 5 ? 3 : strengthChecks >= 4 ? 2 : strengthChecks >= 2 ? 1 : 0;
+  const strengthLabels = ["Weak", "Fair", "Good", "Strong"];
+  const strengthColors = ["bg-red-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
+  const strengthColorText = ["text-red-500", "text-yellow-500", "text-blue-500", "text-green-500"];
 
   const handleResendEmail = async () => {
     if (!email) {
@@ -78,7 +87,14 @@ export default function SignUpForm() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) return toast.error("Password must be at least 8 characters");
+    
+    // Validate password strength
+    if (!hasMinLength) return toast.error("Password must be at least 8 characters");
+    if (!hasUpperCase) return toast.error("Password must contain at least one uppercase letter");
+    if (!hasLowerCase) return toast.error("Password must contain at least one lowercase letter");
+    if (!hasDigit) return toast.error("Password must contain at least one digit");
+    if (!hasSpecialChar) return toast.error("Password must contain at least one special character (!@#$%^&* etc)");
+    
     if (phone && phone.length !== 11) return toast.error("Phone number must be exactly 11 digits (e.g. 03001234567)");
     if (role === "organizer" && !whyOrganize.trim()) return toast.error("Please explain why you want to organize hackathons");
     setLoading(true);
@@ -479,7 +495,7 @@ export default function SignUpForm() {
             <input
               type={showPass ? "text" : "password"}
               value={password} onChange={e => setPassword(e.target.value)}
-              className="input-glass pr-10" placeholder="Min. 8 characters"
+              className="input-glass pr-10" placeholder="Min. 8 chars, uppercase, number, special char"
               required minLength={8}
             />
             <button
@@ -490,20 +506,48 @@ export default function SignUpForm() {
               {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
+          
+          {/* Strength bars */}
           <div className="flex gap-1 mt-2">
-            {[1,2,3].map(i => (
+            {[1,2,3,4].map(i => (
               <div
                 key={i}
-                className={`h-1 flex-1 rounded-full transition-colors ${
-                  strengthLevel >= i ? strengthColors[i] : "bg-border"
+                className={`h-1.5 flex-1 rounded-full transition-all ${
+                  strengthChecks >= i ? strengthColors[strengthLevel] : "bg-border"
                 }`}
               />
             ))}
           </div>
+          
+          {/* Strength label and requirements */}
           {password.length > 0 && (
-            <p className={`text-xs mt-1 ${strengthColors[strengthLevel].replace("bg-","text-")}`}>
-              {strengthLabels[strengthLevel]}
-            </p>
+            <div className="mt-2">
+              <p className={`text-xs font-semibold mb-2 ${strengthColorText[strengthLevel]}`}>
+                Strength: {strengthLabels[strengthLevel]}
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className={`flex items-center gap-1.5 ${hasMinLength ? "text-green-400" : "text-muted"}`}>
+                  <div className={`w-1 h-1 rounded-full ${hasMinLength ? "bg-green-400" : "bg-border"}`} />
+                  8+ characters
+                </div>
+                <div className={`flex items-center gap-1.5 ${hasUpperCase ? "text-green-400" : "text-muted"}`}>
+                  <div className={`w-1 h-1 rounded-full ${hasUpperCase ? "bg-green-400" : "bg-border"}`} />
+                  Uppercase (A-Z)
+                </div>
+                <div className={`flex items-center gap-1.5 ${hasLowerCase ? "text-green-400" : "text-muted"}`}>
+                  <div className={`w-1 h-1 rounded-full ${hasLowerCase ? "bg-green-400" : "bg-border"}`} />
+                  Lowercase (a-z)
+                </div>
+                <div className={`flex items-center gap-1.5 ${hasDigit ? "text-green-400" : "text-muted"}`}>
+                  <div className={`w-1 h-1 rounded-full ${hasDigit ? "bg-green-400" : "bg-border"}`} />
+                  Digit (0-9)
+                </div>
+                <div className={`flex items-center gap-1.5 col-span-2 ${hasSpecialChar ? "text-green-400" : "text-muted"}`}>
+                  <div className={`w-1 h-1 rounded-full ${hasSpecialChar ? "bg-green-400" : "bg-border"}`} />
+                  Special char (!@#$%^&* etc)
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

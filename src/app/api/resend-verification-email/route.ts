@@ -54,34 +54,30 @@ export async function POST(req: Request) {
       );
     }
 
-    // Delete any existing tokens for this user
-    const { error: deleteError } = await supabase
-      .from("email_verification_tokens")
-      .delete()
-      .eq("user_id", profile.id);
-
-    if (deleteError) {
-      console.error("Error deleting old tokens:", deleteError);
-      // Continue anyway - new token will be created
-    }
-
     // Generate a new token
     const token = randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+    // Delete existing tokens first, then insert new one
+    await supabase
+      .from("email_verification_tokens")
+      .delete()
+      .eq("user_id", profile.id);
+
     // Store the new token
-    const { error: dbError } = await supabase
+    const { error: dbError, data: inserted } = await supabase
       .from("email_verification_tokens")
       .insert({
         user_id: profile.id,
         token,
         expires_at: expiresAt.toISOString(),
-      });
+      })
+      .select();
 
-    if (dbError) {
+    if (dbError || !inserted || inserted.length === 0) {
       console.error("Database error storing token:", dbError);
       return Response.json(
-        { error: "Failed to generate verification token" },
+        { error: "Failed to generate verification token. Please try again." },
         { status: 500 }
       );
     }
