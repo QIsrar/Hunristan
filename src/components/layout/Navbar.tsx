@@ -71,7 +71,8 @@ export default function Navbar() {
             </Link>
           ))}
         </div>
-        <di/* Theme toggle button */}
+        <div className="hidden md:flex items-center gap-3">
+          {/* Theme toggle button */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg hover:bg-white/5 transition-colors"
@@ -84,7 +85,6 @@ export default function Navbar() {
             )}
           </button>
           
-          {v className="hidden md:flex items-center gap-3">
           {profile ? (
             <>
               <Link href="/notifications" className="relative p-2 rounded-lg hover:bg-white/5 transition-colors">
