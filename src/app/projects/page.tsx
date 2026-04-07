@@ -161,37 +161,3 @@ export default function ProjectsPage() {
     </div>
   );
 }
-
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {project.technologies.slice(0, 4).map(t => (
-                    <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-surface border border-border text-muted font-mono">{t}</span>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2 mt-auto">
-                  {project.demo_url && (
-                    <a href={project.demo_url} target="_blank" rel="noopener" className="flex items-center gap-1.5 text-xs text-accent hover:underline">
-                      <ExternalLink size={12} /> Live Demo
-                    </a>
-                  )}
-                  {project.github_url && (
-                    <a href={project.github_url} target="_blank" rel="noopener" className="flex items-center gap-1.5 text-xs text-muted hover:text-text transition-colors">
-                      <Github size={12} /> Source
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-20">
-            <Trophy size={48} className="text-muted/20 mx-auto mb-3" />
-            <p className="text-muted">No projects match your filters</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
