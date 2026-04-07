@@ -253,12 +253,6 @@ export default function SignUpForm() {
         }`}>
           <CheckCircle2 size={32} className="text-cyan-400" />
         </div>
-                onClick={handleResendEmail}
-                disabled={resendLoading}
-                className="text-accent hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {resendLoading ? "Sending..." : "request a new link"}
-              
         <h1 className="font-display text-2xl font-bold mb-3">
           Check Your Email! ✉️
         </h1>
@@ -288,7 +282,13 @@ export default function SignUpForm() {
             </div>
             <p className="text-xs text-muted mb-6">
               <strong>Don't see the email?</strong> Check your spam folder or 
-              {" "}<button onClick={() => setStep(3)} className="text-accent hover:underline">request a new link</button>
+              {" "}<button 
+                onClick={handleResendEmail}
+                disabled={resendLoading}
+                className="text-accent hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resendLoading ? "Sending..." : "request a new link"}
+              </button>
             </p>
             <button onClick={() => router.push("/auth/signin")} className="btn-primary w-full">
               Done - Go to Sign In
