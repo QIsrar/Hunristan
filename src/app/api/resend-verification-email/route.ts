@@ -177,17 +177,14 @@ export async function POST(req: Request) {
         name: profile.full_name,
         token,
       });
-      console.log("Verification email sent successfully:", emailResult?.messageId || "sent");
+      console.log("Verification email sent successfully:", emailResult?.id || "sent");
     } catch (emailError) {
       console.error("=== EMAIL SENDING ERROR ===");
       console.error("Error object:", emailError);
       console.error("Error message:", emailError instanceof Error ? emailError.message : String(emailError));
       console.error("Error stack:", emailError instanceof Error ? emailError.stack : "No stack");
-      console.error("SMTP config check:", {
-        SMTP_HOST: process.env.SMTP_HOST ? "✓" : "✗",
-        SMTP_USER: process.env.SMTP_USER ? "✓" : "✗",
-        SMTP_PASS: process.env.SMTP_PASS ? "✓" : "✗",
-        SMTP_PORT: process.env.SMTP_PORT ? "✓" : "✗",
+      console.error("Resend config check:", {
+        RESEND_API_KEY: process.env.RESEND_API_KEY ? "✓" : "✗",
       });
       
       // Delete the token if email send fails
