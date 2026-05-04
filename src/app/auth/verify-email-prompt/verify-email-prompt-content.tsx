@@ -89,7 +89,7 @@ export default function VerifyEmailPromptContent() {
           <button
             onClick={handleResend}
             disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2 block"
+            className="btn-primary w-full flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
