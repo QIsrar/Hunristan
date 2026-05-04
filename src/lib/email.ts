@@ -6,8 +6,6 @@
 
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface OrganizerDecisionEmailOptions {
   to: string;
   name: string;
@@ -28,6 +26,7 @@ export async function sendEmailVerification(opts: EmailVerificationOptions) {
   }
 
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const verificationUrl = `${appUrl}/auth/verify-email?token=${opts.token}`;
     const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
@@ -78,6 +77,7 @@ export async function sendOrganizerDecisionEmail(opts: OrganizerDecisionEmailOpt
   }
 
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
 
@@ -148,6 +148,7 @@ export async function sendNotificationEmail(opts: {
   }
 
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
 
     const result = await resend.emails.send({
