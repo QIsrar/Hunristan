@@ -19,8 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Initialize theme from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
-    const systemTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-    const initialTheme = savedTheme || systemTheme;
+    const initialTheme = savedTheme || "dark";
     
     setTheme(initialTheme);
     applyTheme(initialTheme);

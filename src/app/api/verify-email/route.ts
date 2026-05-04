@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    // Use service role for privileged operations
+    const supabase = await createClient({ admin: true });
 
     // Get the verification token with expiration check
     const { data: tokenData, error: tokenError } = await supabase

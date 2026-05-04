@@ -34,43 +34,43 @@ function SignInForm() {
         return;
       }
 
-      // Fetch profile to check status and route
-      const { data: profile, error: profErr } = await supabase
-        .from("profiles")
-        .select("email, role, organizer_status, is_banned, full_name, rejection_reason, email_verified")
-        .eq("id", data.user.id)
-        .single();
+      console.log("Sign in successful, ensuring profile exists...");
 
-      if (profErr || !profile) {
-        // Profile missing — trigger may have failed at signup. Create it now.
-        const { data: newProf, error: createErr } = await supabase
-          .from("profiles")
-          .upsert({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User",
-            role: data.user.user_metadata?.role || "participant",
-            organizer_status: data.user.user_metadata?.role === "organizer" ? "pending" : "approved",
-            email_verified: false,
-          }, { onConflict: "id" })
-          .select("email, role, organizer_status, is_banned, full_name, rejection_reason, email_verified")
-          .single();
+      // Call API to ensure profile exists (uses service role)
+      const ensureRes = await fetch("/api/ensure-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: data.user.id,
+          email: data.user.email,
+          fullName: data.user.user_metadata?.full_name,
+          role: data.user.user_metadata?.role,
+        }),
+      });
 
-        if (createErr || !newProf) {
-          toast.error("Could not load your profile. Please try again.");
-          await supabase.auth.signOut();
-          return;
-        }
-        // re-assign profile to the newly created one
-        Object.assign(profile || {}, newProf);
-        // redirect using new profile
-        toast.success(`Welcome, ${newProf.full_name?.split(" ")[0]}! 👋`);
-        router.push(`/dashboard/${newProf.role}`);
+      if (!ensureRes.ok) {
+        const ensureErr = await ensureRes.json();
+        console.error("Ensure profile error:", ensureErr);
+        toast.error(ensureErr.error || "Could not load your profile. Please try again.");
+        await supabase.auth.signOut();
         return;
       }
 
+      const ensureData = await ensureRes.json();
+      const profile = ensureData.profile;
+
+      if (!profile) {
+        console.error("No profile returned from ensure endpoint");
+        toast.error("Could not load your profile. Please try again.");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      console.log("Profile ensured:", profile);
+
       // Check if email is verified - MUST be before other checks
       if (!profile.email_verified) {
+        console.log("Email not verified, redirecting to verification");
         toast.error("Please verify your email first. Check your inbox for the verification link.");
         await supabase.auth.signOut();
         router.push(`/auth/verify-email-prompt?email=${encodeURIComponent(profile.email)}`);
@@ -79,35 +79,42 @@ function SignInForm() {
 
       // Check banned
       if (profile.is_banned) {
+        console.log("User is banned");
         await supabase.auth.signOut();
         setBannedUser(true);
         return;
       }
 
-      // Check organizer rejected — redirect to pending page which shows rejection reason
+      // Check organizer rejected
       if (profile.role === "organizer" && profile.organizer_status === "rejected") {
+        console.log("Organizer application rejected");
         toast.error("Your organizer application was not approved.");
         router.push("/dashboard/organizer/pending");
         return;
       }
 
-      // Check organizer pending — let them in but show pending page
-      if (profile.role === "organizer" && (profile.organizer_status === "pending" || !(profile as any).organizer_status)) {
+      // Check organizer pending
+      if (profile.role === "organizer" && (profile.organizer_status === "pending" || !profile.organizer_status)) {
+        console.log("Organizer pending approval");
         toast.success(`Welcome, ${profile.full_name?.split(" ")[0]}! Your application is under review.`);
         router.push("/dashboard/organizer/pending");
         return;
       }
 
       // Success — route based on role
+      console.log(`Sign in successful, routing to ${profile.role}`);
       toast.success(`Welcome back, ${profile.full_name?.split(" ")[0]}! 👋`);
+      
       // Check if this participant is also an approved mentor
       if (profile.role === "participant") {
         const { data: mentorApp } = await supabase.from("mentor_applications")
           .select("id").eq("email", profile.email || "").eq("status","approved").maybeSingle();
         if (mentorApp) return router.push("/dashboard/mentor");
       }
+      
       router.push(`/dashboard/${profile.role}`);
-    } catch {
+    } catch (err) {
+      console.error("Sign in error:", err);
       toast.error("Sign in failed. Please try again.");
     } finally {
       setLoading(false);

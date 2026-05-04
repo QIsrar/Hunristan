@@ -50,20 +50,7 @@ body {
 [data-theme="light"] ::-webkit-scrollbar-thumb { background: #d1d5db; }
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
-/* Glass card - optimized for performance */
-.glass {
-  background: rgba(17, 24, 39, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-[data-theme="light"] .glass {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
+/* Removed redundant classes. Refactor to Tailwind utility classes */
 .glass-hover {
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
@@ -141,33 +128,7 @@ body {
   display: none;
 }
 
-/* Button styles - optimized */
-.btn-primary {
-  background: linear-gradient(135deg, #00e5ff 0%, #0099b3 100%);
-  color: #060910;
-  font-weight: 600;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  padding: 0.75rem 2rem;
-  border-radius: 0.5rem;
-  transition: background 0.3s ease, transform 0.3s ease;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
-  transform: translateY(-1px);
-}
-
-[data-theme="light"] .btn-primary {
-  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
-  color: #ffffff;
-}
-
-[data-theme="light"] .btn-primary:hover {
-  box-shadow: 0 0 30px rgba(8, 145, 178, 0.3);
-}
-
+/* Removed custom button classes. Use Tailwind utilities like `bg-gradient-to-r` or `shadow-lg`. */
 .btn-secondary {
   background: transparent;
   color: var(--accent);
@@ -231,15 +192,7 @@ body {
   }
 }
 
-/* Badge styles */
-.badge-easy { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
-.badge-medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
-.badge-hard { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-
-.badge-active { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
-.badge-upcoming { background: rgba(0, 229, 255, 0.15); color: #00e5ff; border: 1px solid rgba(0,229,255,0.3); }
-.badge-ended { background: rgba(107, 114, 128, 0.15); color: #6b7280; border: 1px solid rgba(107,114,128,0.3); }
-
+/* Removed badge styles. Use Tailwind `bg-opacity` utilities with `border` and `text` classes. */
 /* Verdict colors */
 .verdict-accepted { color: #10b981; }
 .verdict-wrong_answer { color: #ef4444; }

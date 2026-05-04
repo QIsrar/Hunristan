@@ -85,11 +85,11 @@ export default function VerifyEmailPromptContent() {
           <p className="text-sm text-text break-all font-semibold">{email}</p>
         </div>
 
-        <div className="space-y-3 mb-6">
+        <div className="space-y-4 mb-6">
           <button
             onClick={handleResend}
             disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2"
+            className="btn-primary w-full flex items-center justify-center gap-2 block"
           >
             {loading ? (
               <>
@@ -106,7 +106,7 @@ export default function VerifyEmailPromptContent() {
 
           <Link
             href="/auth/signin"
-            className="btn-secondary w-full text-center"
+            className="btn-secondary w-full text-center block"
           >
             Back to Sign In
           </Link>

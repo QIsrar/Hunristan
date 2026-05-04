@@ -1,8 +1,12 @@
 /**
- * Email helper using Nodemailer + Gmail SMTP
- * Only used for optional notifications (organizer approval etc.)
- * Falls back gracefully if not configured.
+ * Email helper using Resend
+ * Free tier: 100 emails/day
+ * Get API key: https://resend.com
  */
+
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface OrganizerDecisionEmailOptions {
   to: string;
@@ -19,26 +23,16 @@ interface EmailVerificationOptions {
 }
 
 export async function sendEmailVerification(opts: EmailVerificationOptions) {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, NEXT_PUBLIC_APP_URL } = process.env;
-
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-    console.log("SMTP not configured — skipping email verification");
-    return;
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY not configured. Get one at https://resend.com");
   }
 
-  const nodemailer = await import("nodemailer");
-  const transporter = nodemailer.default.createTransport({
-    host: SMTP_HOST,
-    port: parseInt(SMTP_PORT || "587"),
-    secure: SMTP_PORT === "465",
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const verificationUrl = `${appUrl}/auth/verify-email?token=${opts.token}`;
+    const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
 
-  const appUrl = NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const verificationUrl = `${appUrl}/auth/verify-email?token=${opts.token}`;
-  const from = EMAIL_FROM || `Smart Hunristan <${SMTP_USER}>`;
-
-  const html = `
+    const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 580px; margin: 0 auto; background: #060910; color: #f1f5f9; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #00e5ff22, #7c3aed22); padding: 40px 32px; text-align: center; border-bottom: 1px solid #1f2937;">
         <div style="font-size: 42px; margin-bottom: 8px;">⚡</div>
@@ -59,40 +53,40 @@ export async function sendEmailVerification(opts: EmailVerificationOptions) {
     </div>
   `;
 
-  await transporter.sendMail({
-    from,
-    to: opts.to,
-    subject: "✉️ Verify Your Email — Smart Hunristan",
-    html,
-  });
+    const result = await resend.emails.send({
+      from,
+      to: opts.to,
+      subject: "✉️ Verify Your Email — Smart Hunristan",
+      html,
+    });
+
+    if (result.error) {
+      throw new Error(`Resend error: ${result.error.message}`);
+    }
+
+    console.log("Verification email sent successfully:", result.data?.id);
+    return result.data;
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    throw error;
+  }
 }
 
 export async function sendOrganizerDecisionEmail(opts: OrganizerDecisionEmailOptions) {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, NEXT_PUBLIC_APP_URL } = process.env;
-
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-    console.log("SMTP not configured — skipping email");
-    return;
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY not configured");
   }
 
-  const nodemailer = await import("nodemailer");
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
 
-  const transporter = nodemailer.default.createTransport({
-    host: SMTP_HOST,
-    port: parseInt(SMTP_PORT || "587"),
-    secure: SMTP_PORT === "465",
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
+    const subject = opts.action === "approve"
+      ? "✅ Your Organizer Account Has Been Approved — Smart Hunristan"
+      : "❌ Organizer Application Update — Smart Hunristan";
 
-  const appUrl = NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const from = EMAIL_FROM || `Smart Hunristan <${SMTP_USER}>`;
-
-  const subject = opts.action === "approve"
-    ? "✅ Your Organizer Account Has Been Approved — Smart Hunristan"
-    : "❌ Organizer Application Update — Smart Hunristan";
-
-  const html = opts.action === "approve"
-    ? `
+    const html = opts.action === "approve"
+      ? `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 580px; margin: 0 auto; background: #060910; color: #f1f5f9; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #00e5ff22, #7c3aed22); padding: 40px 32px; text-align: center; border-bottom: 1px solid #1f2937;">
         <div style="font-size: 42px; margin-bottom: 8px;">⚡</div>
@@ -112,7 +106,7 @@ export async function sendOrganizerDecisionEmail(opts: OrganizerDecisionEmailOpt
       </div>
     </div>
     `
-    : `
+      : `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 580px; margin: 0 auto; background: #060910; color: #f1f5f9; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #ef444422, #f59e0b22); padding: 40px 32px; text-align: center; border-bottom: 1px solid #1f2937;">
         <div style="font-size: 42px; margin-bottom: 8px;">⚡</div>
@@ -129,7 +123,18 @@ export async function sendOrganizerDecisionEmail(opts: OrganizerDecisionEmailOpt
     </div>
     `;
 
-  await transporter.sendMail({ from, to: opts.to, subject, html });
+    const result = await resend.emails.send({ from, to: opts.to, subject, html });
+
+    if (result.error) {
+      throw new Error(`Resend error: ${result.error.message}`);
+    }
+
+    console.log("Organizer decision email sent:", result.data?.id);
+    return result.data;
+  } catch (error) {
+    console.error("Organizer decision email failed:", error);
+    throw error;
+  }
 }
 
 export async function sendNotificationEmail(opts: {
@@ -138,21 +143,28 @@ export async function sendNotificationEmail(opts: {
   subject: string;
   body: string;
 }) {
-  const { SMTP_HOST, SMTP_USER, SMTP_PASS, EMAIL_FROM } = process.env;
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return;
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY not configured");
+  }
 
-  const nodemailer = await import("nodemailer");
-  const transporter = nodemailer.default.createTransport({
-    host: SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_PORT === "465",
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
+  try {
+    const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
 
-  await transporter.sendMail({
-    from: EMAIL_FROM || `Smart Hunristan <${SMTP_USER}>`,
-    to: opts.to,
-    subject: opts.subject,
-    html: `<div style="font-family: sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; background: #060910; color: #f1f5f9; border-radius: 8px;"><p>Hi ${opts.name},</p><p style="line-height: 1.6; color: #9ca3af;">${opts.body}</p><p style="color: #6b7280; font-size: 12px;">— Smart Hunristan Team</p></div>`,
-  });
+    const result = await resend.emails.send({
+      from,
+      to: opts.to,
+      subject: opts.subject,
+      html: `<div style="font-family: sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; background: #060910; color: #f1f5f9; border-radius: 8px;"><p>Hi ${opts.name},</p><p style="line-height: 1.6; color: #9ca3af;">${opts.body}</p><p style="color: #6b7280; font-size: 12px;">— Smart Hunristan Team</p></div>`,
+    });
+
+    if (result.error) {
+      throw new Error(`Resend error: ${result.error.message}`);
+    }
+
+    console.log("Notification email sent:", result.data?.id);
+    return result.data;
+  } catch (error) {
+    console.error("Notification email failed:", error);
+    throw error;
+  }
 }

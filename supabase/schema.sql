@@ -1,6 +1,5 @@
 -- ================================================================
 -- SMART HUNRISTAN HACKATHON PLATFORM — Database Schema v4
--- Run this ONCE in: Supabase Dashboard → SQL Editor → New Query
 -- ================================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -9,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 -- ================================================================
 -- 1. PROFILES
 -- ================================================================
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
   id                    UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   email                 TEXT NOT NULL UNIQUE,
   full_name             TEXT NOT NULL,
@@ -52,20 +51,21 @@ CREATE TABLE profiles (
 -- ================================================================
 -- 2. EMAIL VERIFICATION TOKENS
 -- ================================================================
-CREATE TABLE email_verification_tokens (
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   token           TEXT NOT NULL UNIQUE,
   expires_at      TIMESTAMPTZ NOT NULL,
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  INDEX idx_token (token),
-  INDEX idx_user_id (user_id)
+  created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_email_verification_token ON email_verification_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_email_verification_user_id ON email_verification_tokens(user_id);
 
 -- ================================================================
 -- 3. HACKATHONS
 -- ================================================================
-CREATE TABLE hackathons (
+CREATE TABLE IF NOT EXISTS hackathons (
   id                UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   organizer_id      UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   title             TEXT NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE hackathons (
 -- ================================================================
 -- 4. REGISTRATIONS
 -- ================================================================
-CREATE TABLE registrations (
+CREATE TABLE IF NOT EXISTS registrations (
   id                          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   hackathon_id                UUID REFERENCES hackathons(id) ON DELETE CASCADE NOT NULL,
   user_id                     UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
@@ -114,7 +114,7 @@ CREATE TABLE registrations (
 -- ================================================================
 -- 5. TEAMS
 -- ================================================================
-CREATE TABLE teams (
+CREATE TABLE IF NOT EXISTS teams (
   id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   hackathon_id UUID REFERENCES hackathons(id) ON DELETE CASCADE NOT NULL,
   name         TEXT NOT NULL,
@@ -125,7 +125,7 @@ CREATE TABLE teams (
   UNIQUE(hackathon_id, name)
 );
 
-CREATE TABLE team_members (
+CREATE TABLE IF NOT EXISTS team_members (
   id        UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   team_id   UUID REFERENCES teams(id) ON DELETE CASCADE NOT NULL,
   user_id   UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE team_members (
 -- ================================================================
 -- 6. PROBLEMS
 -- ================================================================
-CREATE TABLE problems (
+CREATE TABLE IF NOT EXISTS problems (
   id               UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   hackathon_id     UUID REFERENCES hackathons(id) ON DELETE CASCADE NOT NULL,
   title            TEXT NOT NULL,
@@ -164,7 +164,7 @@ CREATE TABLE problems (
 --       the client via RLS. All grading happens server-side in
 --       /api/submit using the Supabase service-role client.
 -- ================================================================
-CREATE TABLE test_cases (
+CREATE TABLE IF NOT EXISTS test_cases (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   problem_id      UUID REFERENCES problems(id) ON DELETE CASCADE NOT NULL,
   input           TEXT NOT NULL,
@@ -176,7 +176,7 @@ CREATE TABLE test_cases (
 -- ================================================================
 -- 8. SUBMISSIONS
 -- ================================================================
-CREATE TABLE submissions (
+CREATE TABLE IF NOT EXISTS submissions (
   id                  UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   hackathon_id        UUID REFERENCES hackathons(id) ON DELETE SET NULL,
   problem_id          UUID REFERENCES problems(id) ON DELETE CASCADE NOT NULL,
@@ -206,7 +206,7 @@ CREATE TABLE submissions (
 -- ================================================================
 -- 9. LEADERBOARD
 -- ================================================================
-CREATE TABLE leaderboard (
+CREATE TABLE IF NOT EXISTS leaderboard (
   id                  UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   hackathon_id        UUID REFERENCES hackathons(id) ON DELETE CASCADE NOT NULL,
   user_id             UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
@@ -222,7 +222,7 @@ CREATE TABLE leaderboard (
 -- ================================================================
 -- 10. NOTIFICATIONS
 -- ================================================================
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id         UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id    UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   type       TEXT NOT NULL,
@@ -236,7 +236,7 @@ CREATE TABLE notifications (
 -- ================================================================
 -- 11. SECURITY LOGS
 -- ================================================================
-CREATE TABLE security_logs (
+CREATE TABLE IF NOT EXISTS security_logs (
   id             UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id        UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   hackathon_id   UUID REFERENCES hackathons(id) ON DELETE SET NULL,
@@ -249,7 +249,7 @@ CREATE TABLE security_logs (
 -- ================================================================
 -- 12. ANNOUNCEMENTS
 -- ================================================================
-CREATE TABLE announcements (
+CREATE TABLE IF NOT EXISTS announcements (
   id         UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   admin_id   UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   title      TEXT NOT NULL,
@@ -262,7 +262,7 @@ CREATE TABLE announcements (
 -- ================================================================
 -- 13. MENTORS
 -- ================================================================
-CREATE TABLE mentors (
+CREATE TABLE IF NOT EXISTS mentors (
   id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name         TEXT NOT NULL,
   bio          TEXT,
@@ -277,7 +277,7 @@ CREATE TABLE mentors (
 -- ================================================================
 -- 14. PROJECTS
 -- ================================================================
-CREATE TABLE projects (
+CREATE TABLE IF NOT EXISTS projects (
   id            UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   hackathon_id  UUID REFERENCES hackathons(id) ON DELETE SET NULL,
   team_name     TEXT NOT NULL,
@@ -294,7 +294,7 @@ CREATE TABLE projects (
 -- ================================================================
 -- 15. ACHIEVEMENTS (definitions)
 -- ================================================================
-CREATE TABLE achievements (
+CREATE TABLE IF NOT EXISTS achievements (
   id          TEXT PRIMARY KEY,
   title       TEXT NOT NULL,
   description TEXT NOT NULL,
@@ -307,7 +307,7 @@ CREATE TABLE achievements (
 -- ================================================================
 -- 16. USER_ACHIEVEMENTS (earned badges)
 -- ================================================================
-CREATE TABLE user_achievements (
+CREATE TABLE IF NOT EXISTS user_achievements (
   id             UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id        UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   achievement_id TEXT REFERENCES achievements(id) ON DELETE CASCADE NOT NULL,
@@ -318,7 +318,7 @@ CREATE TABLE user_achievements (
 -- ================================================================
 -- 16. RATE LIMITS (for /api/submit)
 -- ================================================================
-CREATE TABLE rate_limits (
+CREATE TABLE IF NOT EXISTS rate_limits (
   id            UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id       UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   action        TEXT NOT NULL,
@@ -330,7 +330,7 @@ CREATE TABLE rate_limits (
 -- ================================================================
 -- 17. DISCUSSION MESSAGES (Problem Q&A)
 -- ================================================================
-CREATE TABLE discussion_messages (
+CREATE TABLE IF NOT EXISTS discussion_messages (
   id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   problem_id   UUID REFERENCES problems(id) ON DELETE CASCADE NOT NULL,
   hackathon_id UUID REFERENCES hackathons(id) ON DELETE CASCADE NOT NULL,
@@ -347,6 +347,7 @@ CREATE TABLE discussion_messages (
 -- ENABLE ROW LEVEL SECURITY
 -- ================================================================
 ALTER TABLE profiles             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_verification_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hackathons           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE registrations        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teams                ENABLE ROW LEVEL SECURITY;
@@ -369,37 +370,83 @@ ALTER TABLE discussion_messages  ENABLE ROW LEVEL SECURITY;
 -- RLS POLICIES
 -- ================================================================
 
--- Profiles
+-- Drop existing policies to allow re-running schema
+DROP POLICY IF EXISTS "email_verification_tokens_all" ON email_verification_tokens;
+DROP POLICY IF EXISTS "profiles_select_all" ON profiles;
+DROP POLICY IF EXISTS "profiles_insert_own" ON profiles;
+DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
+DROP POLICY IF EXISTS "profiles_admin_all" ON profiles;
+DROP POLICY IF EXISTS "hackathons_select_approved" ON hackathons;
+DROP POLICY IF EXISTS "hackathons_insert_organizer" ON hackathons;
+DROP POLICY IF EXISTS "hackathons_update_organizer" ON hackathons;
+DROP POLICY IF EXISTS "hackathons_delete_admin" ON hackathons;
+DROP POLICY IF EXISTS "registrations_select" ON registrations;
+DROP POLICY IF EXISTS "registrations_insert" ON registrations;
+DROP POLICY IF EXISTS "registrations_update" ON registrations;
+DROP POLICY IF EXISTS "teams_select" ON teams;
+DROP POLICY IF EXISTS "teams_insert" ON teams;
+DROP POLICY IF EXISTS "teams_update" ON teams;
+DROP POLICY IF EXISTS "team_members_select" ON team_members;
+DROP POLICY IF EXISTS "team_members_insert" ON team_members;
+DROP POLICY IF EXISTS "team_members_delete" ON team_members;
+DROP POLICY IF EXISTS "problems_select" ON problems;
+DROP POLICY IF EXISTS "problems_insert" ON problems;
+DROP POLICY IF EXISTS "problems_update" ON problems;
+DROP POLICY IF EXISTS "problems_delete" ON problems;
+DROP POLICY IF EXISTS "test_cases_select_sample" ON test_cases;
+DROP POLICY IF EXISTS "test_cases_insert" ON test_cases;
+DROP POLICY IF EXISTS "test_cases_update" ON test_cases;
+DROP POLICY IF EXISTS "submissions_select" ON submissions;
+DROP POLICY IF EXISTS "submissions_insert" ON submissions;
+DROP POLICY IF EXISTS "leaderboard_select" ON leaderboard;
+DROP POLICY IF EXISTS "leaderboard_upsert" ON leaderboard;
+DROP POLICY IF EXISTS "notifications_select" ON notifications;
+DROP POLICY IF EXISTS "notifications_insert" ON notifications;
+DROP POLICY IF EXISTS "notifications_update" ON notifications;
+DROP POLICY IF EXISTS "security_logs_insert" ON security_logs;
+DROP POLICY IF EXISTS "security_logs_select_admin" ON security_logs;
+DROP POLICY IF EXISTS "announcements_select" ON announcements;
+DROP POLICY IF EXISTS "announcements_admin" ON announcements;
+DROP POLICY IF EXISTS "mentors_select" ON mentors;
+DROP POLICY IF EXISTS "projects_select" ON projects;
+DROP POLICY IF EXISTS "achievements_select" ON achievements;
+DROP POLICY IF EXISTS "user_achievements_select" ON user_achievements;
+DROP POLICY IF EXISTS "user_achievements_insert" ON user_achievements;
+DROP POLICY IF EXISTS "rate_limits_all" ON rate_limits;
+DROP POLICY IF EXISTS "discussion_select" ON discussion_messages;
+DROP POLICY IF EXISTS "discussion_insert" ON discussion_messages;
+DROP POLICY IF EXISTS "discussion_update" ON discussion_messages;
+DROP POLICY IF EXISTS "discussion_delete" ON discussion_messages;
+
+-- Email verification tokens: Service role only (bypasses RLS)
+-- Adding a permissive policy to allow token operations when needed
+CREATE POLICY "email_verification_tokens_all" ON email_verification_tokens FOR ALL USING (true) WITH CHECK (true);
+
+-- Profiles: service role can do anything, regular users manage own
 CREATE POLICY "profiles_select_all"   ON profiles FOR SELECT USING (true);
 CREATE POLICY "profiles_insert_own"   ON profiles FOR INSERT WITH CHECK (id = auth.uid());
-CREATE POLICY "profiles_update_own"   ON profiles FOR UPDATE USING (id = auth.uid());
-CREATE POLICY "profiles_admin_all"    ON profiles FOR ALL
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "profiles_update_own"   ON profiles FOR UPDATE USING (id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
+CREATE POLICY "profiles_delete_own"   ON profiles FOR DELETE USING (id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 
 -- Hackathons: public read for approved, organizer manages own, admin all
 CREATE POLICY "hackathons_select_approved" ON hackathons FOR SELECT
-  USING (is_approved = true OR organizer_id = auth.uid() OR
-         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (is_approved = true OR organizer_id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "hackathons_insert_organizer" ON hackathons FOR INSERT
-  WITH CHECK (organizer_id = auth.uid() AND
-              EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('organizer','admin')));
+  WITH CHECK (organizer_id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "hackathons_update_organizer" ON hackathons FOR UPDATE
-  USING (organizer_id = auth.uid() OR
-         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (organizer_id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "hackathons_delete_admin" ON hackathons FOR DELETE
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (auth.jwt()->>'role' = 'service_role');
 
 -- Registrations
 CREATE POLICY "registrations_select" ON registrations FOR SELECT
-  USING (user_id = auth.uid() OR
-         EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()) OR
-         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (user_id = auth.uid() OR auth.jwt()->>'role' = 'service_role' OR
+         EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()));
 CREATE POLICY "registrations_insert" ON registrations FOR INSERT
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (user_id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "registrations_update" ON registrations FOR UPDATE
-  USING (user_id = auth.uid() OR
-         EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()) OR
-         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (user_id = auth.uid() OR auth.jwt()->>'role' = 'service_role' OR
+         EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()));
 
 -- Teams
 CREATE POLICY "teams_select" ON teams FOR SELECT USING (true);
@@ -414,51 +461,45 @@ CREATE POLICY "team_members_delete" ON team_members FOR DELETE USING (user_id = 
 -- Problems: public read for approved hackathons
 CREATE POLICY "problems_select" ON problems FOR SELECT
   USING (EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND
-                 (h.is_approved = true OR h.organizer_id = auth.uid() OR
-                  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))));
+                 (h.is_approved = true OR h.organizer_id = auth.uid() OR auth.jwt()->>'role' = 'service_role')));
 CREATE POLICY "problems_insert" ON problems FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()));
+  WITH CHECK (EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()) OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "problems_update" ON problems FOR UPDATE
   USING (EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND
-                 (h.organizer_id = auth.uid() OR
-                  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))));
+                 (h.organizer_id = auth.uid() OR auth.jwt()->>'role' = 'service_role')));
 CREATE POLICY "problems_delete" ON problems FOR DELETE
-  USING (EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()));
+  USING (EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()) OR auth.jwt()->>'role' = 'service_role');
 
 -- Test cases: PUBLIC INPUT visible, but EXPECTED OUTPUT hidden for hidden cases
 -- All actual grading is done server-side via service role, never exposing expected_output to client
 CREATE POLICY "test_cases_select_sample" ON test_cases FOR SELECT
   USING (
-    is_hidden = false OR
+    is_hidden = false OR auth.jwt()->>'role' = 'service_role' OR
     EXISTS (
       SELECT 1 FROM problems p
       JOIN hackathons h ON h.id = p.hackathon_id
-      WHERE p.id = problem_id AND (
-        h.organizer_id = auth.uid() OR
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-      )
+      WHERE p.id = problem_id AND h.organizer_id = auth.uid()
     )
   );
 CREATE POLICY "test_cases_insert" ON test_cases FOR INSERT
   WITH CHECK (EXISTS (
     SELECT 1 FROM problems p JOIN hackathons h ON h.id = p.hackathon_id
     WHERE p.id = problem_id AND h.organizer_id = auth.uid()
-  ));
+  ) OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "test_cases_update" ON test_cases FOR UPDATE
   USING (EXISTS (
     SELECT 1 FROM problems p JOIN hackathons h ON h.id = p.hackathon_id
     WHERE p.id = problem_id AND h.organizer_id = auth.uid()
-  ));
+  ) OR auth.jwt()->>'role' = 'service_role');
 
 -- Submissions: users see own; organizers see all in their events; admins see all
 CREATE POLICY "submissions_select" ON submissions FOR SELECT
   USING (
-    user_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid()) OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    user_id = auth.uid() OR auth.jwt()->>'role' = 'service_role' OR
+    EXISTS (SELECT 1 FROM hackathons h WHERE h.id = hackathon_id AND h.organizer_id = auth.uid())
   );
 CREATE POLICY "submissions_insert" ON submissions FOR INSERT
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (user_id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 
 -- Leaderboard: public read
 CREATE POLICY "leaderboard_select" ON leaderboard FOR SELECT USING (true);
@@ -470,15 +511,14 @@ CREATE POLICY "notifications_insert" ON notifications FOR INSERT WITH CHECK (tru
 CREATE POLICY "notifications_update" ON notifications FOR UPDATE USING (user_id = auth.uid());
 
 -- Security logs
-CREATE POLICY "security_logs_insert" ON security_logs FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "security_logs_insert" ON security_logs FOR INSERT WITH CHECK (user_id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "security_logs_select_admin" ON security_logs FOR SELECT
-  USING (user_id = auth.uid() OR
-         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (user_id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 
 -- Announcements
-CREATE POLICY "announcements_select" ON announcements FOR SELECT USING (is_active = true);
+CREATE POLICY "announcements_select" ON announcements FOR SELECT USING (is_active = true OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "announcements_admin" ON announcements FOR ALL
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (auth.jwt()->>'role' = 'service_role');
 
 -- Mentors & Projects: public read
 CREATE POLICY "mentors_select"  ON mentors  FOR SELECT USING (is_active = true);
@@ -507,14 +547,14 @@ CREATE POLICY "discussion_delete" ON discussion_messages FOR DELETE
 -- ================================================================
 -- INDEXES (for performance)
 -- ================================================================
-CREATE INDEX idx_submissions_user ON submissions(user_id);
-CREATE INDEX idx_submissions_hackathon ON submissions(hackathon_id);
-CREATE INDEX idx_submissions_problem ON submissions(problem_id);
-CREATE INDEX idx_leaderboard_hackathon ON leaderboard(hackathon_id);
-CREATE INDEX idx_notifications_user ON notifications(user_id, is_read);
-CREATE INDEX idx_discussion_problem ON discussion_messages(problem_id);
-CREATE INDEX idx_security_logs_user ON security_logs(user_id);
-CREATE INDEX idx_user_achievements_user ON user_achievements(user_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_hackathon ON submissions(hackathon_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions(problem_id);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_hackathon ON leaderboard(hackathon_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_discussion_problem ON discussion_messages(problem_id);
+CREATE INDEX IF NOT EXISTS idx_security_logs_user ON security_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_user ON user_achievements(user_id);
 
 -- ================================================================
 -- TRIGGER: Auto-create profile on auth.users INSERT
@@ -678,19 +718,18 @@ ALTER TABLE leaderboard          REPLICA IDENTITY FULL;
 ALTER TABLE notifications        REPLICA IDENTITY FULL;
 ALTER TABLE discussion_messages  REPLICA IDENTITY FULL;
 
--- Add tables to realtime publication
+-- Add tables to realtime publication (idempotent using SET)
 BEGIN;
   DO $$
   BEGIN
     IF NOT EXISTS (
       SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime'
     ) THEN
-      CREATE PUBLICATION supabase_realtime;
+      CREATE PUBLICATION supabase_realtime FOR TABLE leaderboard, notifications, discussion_messages;
+    ELSE
+      ALTER PUBLICATION supabase_realtime SET TABLE leaderboard, notifications, discussion_messages;
     END IF;
   END $$;
-  ALTER PUBLICATION supabase_realtime ADD TABLE leaderboard;
-  ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
-  ALTER PUBLICATION supabase_realtime ADD TABLE discussion_messages;
 COMMIT;
 
 -- ================================================================

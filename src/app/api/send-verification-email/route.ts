@@ -23,20 +23,40 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabase = await createClient();
+    // Use service role for privileged operations
+    const supabaseServiceRole = await createClient({ admin: true });
 
-    // Check if user exists
-    const { data: userCheck } = await supabase
+    // Check if user exists, or create profile if trigger hasn't fired yet
+    let userCheck = null;
+    const { data: userCheckData } = await supabaseServiceRole
       .from("profiles")
       .select("id")
       .eq("id", userId)
       .single();
 
-    if (!userCheck) {
-      return Response.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+    if (userCheckData) {
+      userCheck = userCheckData;
+    } else {
+      // Profile doesn't exist yet, create it (trigger might not have fired)
+      console.log("Profile not found for userId, creating:", userId);
+      
+      const { error: insertError } = await supabaseServiceRole
+        .from("profiles")
+        .insert({
+          id: userId,
+          email,
+          full_name: fullName,
+          role: "participant", // Default to participant
+          organizer_status: "approved",
+        });
+
+      if (insertError && insertError.code !== "23505") { // Ignore duplicate key errors
+        console.error("Failed to create profile:", insertError);
+        return Response.json(
+          { error: "Failed to create user profile" },
+          { status: 500 }
+        );
+      }
     }
 
     // Generate a secure token
@@ -44,13 +64,13 @@ export async function POST(req: Request) {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Delete any existing tokens for this user
-    await supabase
+    await supabaseServiceRole
       .from("email_verification_tokens")
       .delete()
       .eq("user_id", userId);
 
     // Store the token in database
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseServiceRole
       .from("email_verification_tokens")
       .insert({
         user_id: userId,
@@ -76,7 +96,7 @@ export async function POST(req: Request) {
     } catch (emailError) {
       console.error("Email sending error:", emailError);
       // Delete the token if email send fails
-      await supabase
+      await supabaseServiceRole
         .from("email_verification_tokens")
         .delete()
         .eq("token", token);

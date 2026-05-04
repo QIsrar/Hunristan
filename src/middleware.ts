@@ -14,7 +14,7 @@ const PUBLIC_ROUTES = [
   "/hackathons",
   "/mentors",
   "/projects",
-  "/api/",
+  "/api",  // ← Changed from "/api/" to "/api" (no trailing slash)
 ];
 
 // Routes that require email verification
