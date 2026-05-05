@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import { Search, Filter, Users, Clock, Trophy, Tag, ArrowRight } from "lucide-react";
 import type { Hackathon } from "@/types";
@@ -104,7 +105,7 @@ export default function HackathonsPage() {
                 {/* Banner */}
                 <div className="h-36 bg-gradient-to-br from-accent/10 via-surface to-accent2/10 relative overflow-hidden">
                   {h.banner_url ? (
-                    <img src={h.banner_url} alt={h.title} className="w-full h-full object-cover opacity-60" />
+                    <Image src={h.banner_url} alt={h.title} width={400} height={144} className="w-full h-full object-cover opacity-60" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <Trophy size={48} className="text-accent/20" />
