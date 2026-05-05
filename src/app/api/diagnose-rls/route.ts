@@ -52,9 +52,16 @@ export async function GET(req: NextRequest) {
     }
 
     // Test 3: Check RLS policies
-    const { data: policies, error: policiesError } = await supabase
-      .rpc("get_rls_policies", { table_name: "profiles" })
-      .catch(() => ({ data: null, error: "RPC not available" }));
+    let policies = null;
+    let policiesError = null;
+    try {
+      const result = await supabase
+        .rpc("get_rls_policies", { table_name: "profiles" });
+      policies = result.data;
+      policiesError = result.error;
+    } catch (err) {
+      policiesError = "RPC not available";
+    }
 
     diagnostics.rls_policies = policies || "Could not fetch (need custom RPC)";
 
