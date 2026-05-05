@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     const { data: newProfile, error: insertErr } = await supabase
       .from("profiles")
-      .insert(profileData, { count: "exact" })
+      .insert(profileData)
       .select("email, role, organizer_status, is_banned, full_name, rejection_reason, email_verified")
       .maybeSingle();
 
@@ -118,6 +118,24 @@ export async function POST(req: NextRequest) {
         message: insertErr.message,
         details: (insertErr as any).details,
       });
+      
+      // For foreign key violations, wait a moment and try fetching
+      // The trigger might still be creating the profile
+      if (insertErr.code === "23503") {
+        console.log("Foreign key constraint - waiting for trigger...");
+        await new Promise(r => setTimeout(r, 500));
+        
+        const { data: triggeredProfile } = await supabase
+          .from("profiles")
+          .select("email, role, organizer_status, is_banned, full_name, rejection_reason, email_verified")
+          .eq("id", userId)
+          .maybeSingle();
+        
+        if (triggeredProfile) {
+          console.log("Trigger created profile successfully");
+          return NextResponse.json({ profile: triggeredProfile, created: false });
+        }
+      }
       
       // Try to fetch again - profile might have been created by trigger
       console.log("Attempting fallback fetch after insert error...");

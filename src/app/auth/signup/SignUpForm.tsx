@@ -128,7 +128,10 @@ export default function SignUpForm() {
         password,
         options: { data: meta },
       });
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase signUp error:", error);
+        throw error;
+      }
 
       // Update profile with any extra fields not captured in trigger
       const userId = data.user?.id;
@@ -167,6 +170,7 @@ export default function SignUpForm() {
 
       setStep(3);
     } catch (err: unknown) {
+      console.error("Sign up failed:", err);
       const msg = err instanceof Error ? err.message : "Sign up failed";
       if (msg.includes("already registered") || msg.includes("already been registered")) {
         toast.error("This email is already registered. Please sign in instead.");
