@@ -1,21 +1,5 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "installCommand": "npm ci",
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "NEXT_PUBLIC_PISTON_API_URL": "@next_public_piston_api_url",
-    "GEMINI_API_KEY": "@gemini_api_key",
-    "SMTP_HOST": "@smtp_host",
-    "SMTP_PORT": "@smtp_port",
-    "SMTP_USER": "@smtp_user",
-    "SMTP_PASS": "@smtp_pass",
-    "EMAIL_FROM": "@email_from",
-    "SETUP_SECRET": "@setup_secret",
-    "NEXT_PUBLIC_APP_URL": "@next_public_app_url",
-    "NEXT_PUBLIC_ADMIN_EMAIL": "@next_public_admin_email",
-    "NODE_ENV": "production"
-  }
+  "installCommand": "npm ci"
 }
