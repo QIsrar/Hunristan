@@ -441,7 +441,7 @@ CREATE POLICY "password_reset_tokens_all" ON password_reset_tokens FOR ALL USING
 
 -- Profiles: service role can do anything, regular users manage own
 CREATE POLICY "profiles_select_all"   ON profiles FOR SELECT USING (true);
-CREATE POLICY "profiles_insert_own"   ON profiles FOR INSERT WITH CHECK (id = auth.uid());
+CREATE POLICY "profiles_insert_own"   ON profiles FOR INSERT WITH CHECK (id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "profiles_update_own"   ON profiles FOR UPDATE USING (id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "profiles_delete_own"   ON profiles FOR DELETE USING (id = auth.uid() OR auth.jwt()->>'role' = 'service_role');
 
