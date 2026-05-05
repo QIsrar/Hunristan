@@ -11,6 +11,7 @@ function SignInForm() {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [pendingOrganizer, setPendingOrganizer] = useState(false);
   const [rejectedOrganizer, setRejectedOrganizer] = useState<{ reason: string | null } | null>(null);
   const [bannedUser, setBannedUser] = useState(false);
@@ -105,14 +106,32 @@ function SignInForm() {
       console.log(`Sign in successful, routing to ${profile.role}`);
       toast.success(`Welcome back, ${profile.full_name?.split(" ")[0]}! 👋`);
       
+      // Show redirecting state
+      setRedirecting(true);
+      
+      // Delay slightly to ensure session is set before navigation
+      await new Promise(r => setTimeout(r, 300));
+      
       // Check if this participant is also an approved mentor
       if (profile.role === "participant") {
-        const { data: mentorApp } = await supabase.from("mentor_applications")
-          .select("id").eq("email", profile.email || "").eq("status","approved").maybeSingle();
-        if (mentorApp) return router.push("/dashboard/mentor");
+        try {
+          const { data: mentorApp } = await supabase.from("mentor_applications")
+            .select("id").eq("email", profile.email || "").eq("status","approved").maybeSingle();
+          if (mentorApp) {
+            console.log("Routing to mentor dashboard");
+            router.push("/dashboard/mentor");
+            return;
+          }
+        } catch (mentorErr) {
+          console.error("Error checking mentor status:", mentorErr);
+          // Continue to regular dashboard
+        }
       }
       
-      router.push(`/dashboard/${profile.role}`);
+      const dashboardPath = `/dashboard/${profile.role}`;
+      console.log(`Pushing to: ${dashboardPath}`);
+      router.push(dashboardPath);
+      console.log("Router push completed");
     } catch (err) {
       console.error("Sign in error:", err);
       toast.error("Sign in failed. Please try again.");
@@ -208,6 +227,19 @@ function SignInForm() {
           </a>
         </p>
         <button onClick={() => setBannedUser(false)} className="btn-secondary w-full">Back</button>
+      </div>
+    );
+  }
+
+  // Redirecting state
+  if (redirecting) {
+    return (
+      <div className="glass rounded-2xl p-8 text-center animate-slide-up">
+        <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center bg-accent/10">
+          <Loader2 size={32} className="text-accent animate-spin" />
+        </div>
+        <h2 className="font-display text-xl font-bold mb-2">Redirecting...</h2>
+        <p className="text-muted text-sm">Taking you to your dashboard</p>
       </div>
     );
   }
