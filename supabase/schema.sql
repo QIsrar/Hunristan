@@ -62,6 +62,18 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
 CREATE INDEX IF NOT EXISTS idx_email_verification_token ON email_verification_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_email_verification_user_id ON email_verification_tokens(user_id);
 
+-- Password Reset Tokens
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  token           TEXT NOT NULL UNIQUE,
+  expires_at      TIMESTAMPTZ NOT NULL,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_user_id ON password_reset_tokens(user_id);
+
 -- ================================================================
 -- 3. HACKATHONS
 -- ================================================================
@@ -348,6 +360,7 @@ CREATE TABLE IF NOT EXISTS discussion_messages (
 -- ================================================================
 ALTER TABLE profiles             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_verification_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE password_reset_tokens     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hackathons           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE registrations        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teams                ENABLE ROW LEVEL SECURITY;
@@ -372,6 +385,7 @@ ALTER TABLE discussion_messages  ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies to allow re-running schema
 DROP POLICY IF EXISTS "email_verification_tokens_all" ON email_verification_tokens;
+DROP POLICY IF EXISTS "password_reset_tokens_all" ON password_reset_tokens;
 DROP POLICY IF EXISTS "profiles_select_all" ON profiles;
 DROP POLICY IF EXISTS "profiles_insert_own" ON profiles;
 DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
@@ -421,6 +435,9 @@ DROP POLICY IF EXISTS "discussion_delete" ON discussion_messages;
 -- Email verification tokens: Service role only (bypasses RLS)
 -- Adding a permissive policy to allow token operations when needed
 CREATE POLICY "email_verification_tokens_all" ON email_verification_tokens FOR ALL USING (true) WITH CHECK (true);
+
+-- Password reset tokens: Service role only (bypasses RLS)
+CREATE POLICY "password_reset_tokens_all" ON password_reset_tokens FOR ALL USING (true) WITH CHECK (true);
 
 -- Profiles: service role can do anything, regular users manage own
 CREATE POLICY "profiles_select_all"   ON profiles FOR SELECT USING (true);

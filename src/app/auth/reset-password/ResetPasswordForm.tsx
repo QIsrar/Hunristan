@@ -1,9 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Lock, Loader2, CheckCircle2, AlertCircle, Mail, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Lock, Loader2, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function ResetPasswordForm() {
@@ -13,42 +12,27 @@ export default function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [code, setCode] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
 
   useEffect(() => {
-    const resetCode = searchParams.get("code");
-    if (!resetCode) {
+    const resetToken = searchParams.get("token");
+    if (!resetToken) {
       setError("Invalid password reset link. Please request a new one.");
     } else {
-      setCode(resetCode);
-      // Try to exchange the recovery code for a session
-      exchangeRecoveryCode(resetCode);
+      setToken(resetToken);
     }
-  }, [searchParams, supabase]);
-
-  const exchangeRecoveryCode = async (recoveryCode: string) => {
-    try {
-      console.log("Exchanging recovery code for session...");
-      const { error } = await supabase.auth.exchangeCodeForSession(recoveryCode);
-      
-      if (error) {
-        console.warn("Code exchange warning (this is expected if PKCE fails):", error.message);
-        // PKCE errors are expected - we'll handle it in the password update
-      } else {
-        console.log("Recovery session established");
-      }
-    } catch (err) {
-      console.warn("Recovery code exchange error (expected):", err);
-      // Errors here are okay - we'll use the code directly in updateUser
-    }
-  };
+  }, [searchParams]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!token) {
+      setError("Invalid reset token");
+      return;
+    }
+
     if (password !== confirm) {
       toast.error("Passwords don't match");
       return;
@@ -63,41 +47,122 @@ export default function ResetPasswordForm() {
     setError(null);
     
     try {
-      console.log("Attempting password reset...");
-      
-      // Check if we have a session
-      const { data: sessionData } = await supabase.auth.getSession();
-      console.log("Current session:", sessionData?.session ? "exists" : "missing");
+      const res = await fetch("/api/verify-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword: password }),
+      });
 
-      // Try to update password
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      
-      if (updateError) {
-        console.error("Password update error:", updateError);
-        
-        // If no session, try exchanging the recovery code again
-        if (code && !sessionData?.session) {
-          console.log("No session, trying to exchange recovery code again...");
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
-            console.error("Second exchange attempt error:", exchangeError);
-          } else {
-            // Try update again after exchanging
-            const { error: updateError2 } = await supabase.auth.updateUser({ password });
-            if (updateError2) {
-              throw new Error(updateError2.message || "Failed to update password");
-            } else {
-              console.log("Password updated successfully on second attempt");
-              setDone(true);
-              toast.success("Password updated successfully!");
-              setTimeout(() => router.push("/auth/signin"), 2000);
-              return;
-            }
-          }
-        }
-        
-        throw new Error(updateError.message || "Failed to update password");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to reset password");
+        toast.error(data.error || "Failed to reset password");
+        return;
       }
+
+      setDone(true);
+      toast.success("Password reset successfully!");
+      setTimeout(() => router.push("/auth/signin"), 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="glass rounded-2xl p-8 text-center animate-slide-up max-w-md w-full mx-auto">
+        <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <AlertCircle size={32} className="text-red-400" />
+        </div>
+        <h1 className="font-display text-2xl font-bold mb-2 text-red-400">Invalid Link</h1>
+        <p className="text-muted text-sm mb-6">{error}</p>
+        <Link href="/auth/forgot-password" className="btn-primary w-full flex items-center justify-center gap-2">
+          <ArrowLeft size={16} /> Request New Link
+        </Link>
+      </div>
+    );
+  }
+
+  if (done) {
+    return (
+      <div className="glass rounded-2xl p-8 text-center animate-slide-up max-w-md w-full mx-auto">
+        <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 size={32} className="text-green-400" />
+        </div>
+        <h1 className="font-display text-2xl font-bold mb-2">Password Reset!</h1>
+        <p className="text-muted text-sm mb-6">Your password has been updated successfully.</p>
+        <p className="text-muted text-xs mb-4">Redirecting to sign in...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass rounded-2xl p-8 animate-slide-up max-w-md w-full mx-auto">
+      <Link href="/auth/signin" className="flex items-center gap-1.5 text-muted text-sm hover:text-accent transition-colors mb-6">
+        <ArrowLeft size={14} /> Back to Sign In
+      </Link>
+      
+      <h1 className="font-display text-2xl font-bold mb-1">Create New Password</h1>
+      <p className="text-muted text-sm mb-8">Enter your new password below</p>
+
+      <form onSubmit={handleReset} className="space-y-4">
+        {/* New Password */}
+        <div>
+          <label className="text-sm text-muted mb-2 block">New Password</label>
+          <div className="relative">
+            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              type={showPass ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input-glass pl-10 pr-10"
+              placeholder="••••••••"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass(!showPass)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-accent transition-colors"
+            >
+              {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+          <p className="text-xs text-muted mt-1">Minimum 8 characters</p>
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="text-sm text-muted mb-2 block">Confirm Password</label>
+          <div className="relative">
+            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              type={showPass ? "text" : "password"}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              className="input-glass pl-10 pr-10"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary w-full flex items-center justify-center gap-2"
+        >
+          {loading ? <Loader2 size={18} className="animate-spin" /> : <Lock size={18} />}
+          {loading ? "Updating..." : "Update Password"}
+        </button>
+      </form>
+    </div>
+  );
+}
 
       console.log("Password updated successfully");
       setDone(true);

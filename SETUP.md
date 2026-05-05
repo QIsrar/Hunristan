@@ -135,19 +135,49 @@ This enables instant leaderboard updates and live notifications.
 
 ---
 
-## Step 8: Configure Email (Optional)
+## Step 8: Configure Email (Optional but Recommended)
 
-For organizer approval emails, add Gmail SMTP to `.env.local`:
+The app uses **Nodemailer** with SMTP. Email is used for:
+- Email verification on signup
+- Organizer approval/rejection emails
+- Password reset emails
 
+### Option A: Gmail (Recommended for Testing)
+
+1. **Enable 2-Step Verification** in your Google Account → Security
+2. **Generate an App Password**:
+   - Go to https://myaccount.google.com/apppasswords
+   - Select "Mail" and "Windows Computer"
+   - Google will generate a 16-character password
+3. **Add to `.env.local`**:
 ```env
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=your@gmail.com
-SMTP_PASS=your-16-char-app-password  # Gmail → Security → App Passwords
-EMAIL_FROM=Smart Hunristan <noreply@yourdomain.com>
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-16-char-app-password
+EMAIL_FROM=Smart Hunristan <noreply@smarthunristan.com>
 ```
 
-The platform works without email — in-app notifications are always used.
+### Option B: Mailtrap (Easiest for Development)
+
+1. Create free account at https://mailtrap.io
+2. Go to **SMTP Settings** in Mailtrap dashboard
+3. Copy the credentials and add to `.env.local`:
+```env
+SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=2525
+SMTP_USER=your-mailtrap-user
+SMTP_PASS=your-mailtrap-password
+EMAIL_FROM=Smart Hunristan <noreply@smarthunristan.com>
+```
+
+### Option C: Other Providers
+
+- **Outlook/Hotmail**: `smtp-mail.outlook.com:587`
+- **SendGrid**: `smtp.sendgrid.net:587` (use `apikey` as username and your API key as password)
+- **Custom SMTP**: Use any SMTP server
+
+**Note**: If email is not configured, email verification and organizer emails won't send, but all other features work fine.
 
 ---
 

@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 
@@ -9,18 +8,27 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+      const res = await fetch("/api/send-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
-      if (error) throw error;
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to send reset email");
+        return;
+      }
+
       setSent(true);
+      toast.success("Reset link sent! Check your email.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to send reset email");
     } finally {

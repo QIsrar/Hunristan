@@ -1,10 +1,10 @@
 /**
- * Email helper using Resend
- * Free tier: 100 emails/day
- * Get API key: https://resend.com
+ * Email helper using Nodemailer
+ * Supports Gmail SMTP, Outlook, and other SMTP providers
+ * Configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in .env.local
  */
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 interface OrganizerDecisionEmailOptions {
   to: string;
@@ -20,16 +20,36 @@ interface EmailVerificationOptions {
   token: string;
 }
 
-export async function sendEmailVerification(opts: EmailVerificationOptions) {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY not configured. Get one at https://resend.com");
+// Initialize transporter
+function getTransporter() {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = process.env.SMTP_PORT;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    throw new Error(
+      "Email not configured. Please set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in .env.local"
+    );
   }
 
+  return nodemailer.createTransport({
+    host: smtpHost,
+    port: parseInt(smtpPort),
+    secure: parseInt(smtpPort) === 465,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
+}
+
+export async function sendEmailVerification(opts: EmailVerificationOptions) {
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const transporter = getTransporter();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const verificationUrl = `${appUrl}/auth/verify-email?token=${opts.token}`;
-    const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
+    const from = process.env.EMAIL_FROM || "Smart Hunristan <noreply@smarthunristan.com>";
 
     const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 580px; margin: 0 auto; background: #060910; color: #f1f5f9; border-radius: 12px; overflow: hidden;">
@@ -52,19 +72,15 @@ export async function sendEmailVerification(opts: EmailVerificationOptions) {
     </div>
   `;
 
-    const result = await resend.emails.send({
+    const result = await transporter.sendMail({
       from,
       to: opts.to,
       subject: "✉️ Verify Your Email — Smart Hunristan",
       html,
     });
 
-    if (result.error) {
-      throw new Error(`Resend error: ${result.error.message}`);
-    }
-
-    console.log("Verification email sent successfully:", result.data?.id);
-    return result.data;
+    console.log("Verification email sent successfully:", result.messageId);
+    return result;
   } catch (error) {
     console.error("Email sending failed:", error);
     throw error;
@@ -72,14 +88,10 @@ export async function sendEmailVerification(opts: EmailVerificationOptions) {
 }
 
 export async function sendOrganizerDecisionEmail(opts: OrganizerDecisionEmailOptions) {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY not configured");
-  }
-
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const transporter = getTransporter();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
+    const from = process.env.EMAIL_FROM || "Smart Hunristan <noreply@smarthunristan.com>";
 
     const subject = opts.action === "approve"
       ? "✅ Your Organizer Account Has Been Approved — Smart Hunristan"
@@ -123,14 +135,10 @@ export async function sendOrganizerDecisionEmail(opts: OrganizerDecisionEmailOpt
     </div>
     `;
 
-    const result = await resend.emails.send({ from, to: opts.to, subject, html });
+    const result = await transporter.sendMail({ from, to: opts.to, subject, html });
 
-    if (result.error) {
-      throw new Error(`Resend error: ${result.error.message}`);
-    }
-
-    console.log("Organizer decision email sent:", result.data?.id);
-    return result.data;
+    console.log("Organizer decision email sent:", result.messageId);
+    return result;
   } catch (error) {
     console.error("Organizer decision email failed:", error);
     throw error;
@@ -143,29 +151,68 @@ export async function sendNotificationEmail(opts: {
   subject: string;
   body: string;
 }) {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY not configured");
-  }
-
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const from = process.env.EMAIL_FROM || "noreply@smarthunristan.com";
+    const transporter = getTransporter();
+    const from = process.env.EMAIL_FROM || "Smart Hunristan <noreply@smarthunristan.com>";
 
-    const result = await resend.emails.send({
+    const result = await transporter.sendMail({
       from,
       to: opts.to,
       subject: opts.subject,
       html: `<div style="font-family: sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; background: #060910; color: #f1f5f9; border-radius: 8px;"><p>Hi ${opts.name},</p><p style="line-height: 1.6; color: #9ca3af;">${opts.body}</p><p style="color: #6b7280; font-size: 12px;">— Smart Hunristan Team</p></div>`,
     });
 
-    if (result.error) {
-      throw new Error(`Resend error: ${result.error.message}`);
-    }
-
-    console.log("Notification email sent:", result.data?.id);
-    return result.data;
+    console.log("Notification email sent:", result.messageId);
+    return result;
   } catch (error) {
     console.error("Notification email failed:", error);
+    throw error;
+  }
+}
+
+export async function sendPasswordResetEmail(opts: {
+  to: string;
+  name: string;
+  token: string;
+}) {
+  try {
+    const transporter = getTransporter();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const resetUrl = `${appUrl}/auth/reset-password?token=${opts.token}`;
+    const from = process.env.EMAIL_FROM || "Smart Hunristan <noreply@smarthunristan.com>";
+
+    const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 580px; margin: 0 auto; background: #060910; color: #f1f5f9; border-radius: 12px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #00e5ff22, #7c3aed22); padding: 40px 32px; text-align: center; border-bottom: 1px solid #1f2937;">
+        <div style="font-size: 42px; margin-bottom: 8px;">🔐</div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #00e5ff, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Smart Hunristan</h1>
+      </div>
+      <div style="padding: 32px;">
+        <h2 style="color: #00e5ff; margin-top: 0;">🔑 Reset Your Password</h2>
+        <p style="color: #9ca3af; line-height: 1.6;">Hi <strong style="color: #f1f5f9;">${opts.name}</strong>,</p>
+        <p style="color: #9ca3af; line-height: 1.6;">We received a request to reset your password. Click the button below to create a new password.</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${resetUrl}" style="background: linear-gradient(135deg, #00e5ff, #0099b3); color: #060910; font-weight: 700; padding: 12px 32px; border-radius: 8px; text-decoration: none; display: inline-block; font-size: 14px;">
+            Reset Password →
+          </a>
+        </div>
+        <p style="color: #6b7280; font-size: 13px; text-align: center; margin-top: 20px;">Or copy and paste this link in your browser:<br><span style="color: #9ca3af; word-break: break-all; font-size: 12px;">${resetUrl}</span></p>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 24px; border-top: 1px solid #1f2937; padding-top: 16px;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+      </div>
+    </div>
+  `;
+
+    const result = await transporter.sendMail({
+      from,
+      to: opts.to,
+      subject: "🔐 Reset Your Password — Smart Hunristan",
+      html,
+    });
+
+    console.log("Password reset email sent successfully:", result.messageId);
+    return result;
+  } catch (error) {
+    console.error("Password reset email failed:", error);
     throw error;
   }
 }
