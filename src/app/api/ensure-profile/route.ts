@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
       full_name: fullName || email.split("@")[0] || "User",
       role: role || "participant",
       organizer_status: role === "organizer" ? "pending" : "approved",
+      email_verified: true,
     };
 
     console.log("Inserting profile with data:", profileData);

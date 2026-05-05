@@ -1,7 +1,6 @@
 "use client";
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, LogIn, Loader2, Code2, Clock, Ban } from "lucide-react";
@@ -14,7 +13,6 @@ function SignInForm() {
   const [pendingOrganizer, setPendingOrganizer] = useState(false);
   const [rejectedOrganizer, setRejectedOrganizer] = useState<{ reason: string | null } | null>(null);
   const [bannedUser, setBannedUser] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -68,15 +66,6 @@ function SignInForm() {
 
       console.log("Profile ensured:", profile);
 
-      // Check if email is verified - MUST be before other checks
-      if (!profile.email_verified) {
-        console.log("Email not verified, redirecting to verification");
-        toast.error("Please verify your email first. Check your inbox for the verification link.");
-        await supabase.auth.signOut();
-        router.push(`/auth/verify-email-prompt?email=${encodeURIComponent(profile.email)}`);
-        return;
-      }
-
       // Check banned
       if (profile.is_banned) {
         console.log("User is banned");
@@ -89,7 +78,7 @@ function SignInForm() {
       if (profile.role === "organizer" && profile.organizer_status === "rejected") {
         console.log("Organizer application rejected");
         toast.error("Your organizer application was not approved.");
-        router.push("/dashboard/organizer/pending");
+        window.location.href = "/dashboard/organizer/pending";
         return;
       }
 
@@ -97,16 +86,13 @@ function SignInForm() {
       if (profile.role === "organizer" && (profile.organizer_status === "pending" || !profile.organizer_status)) {
         console.log("Organizer pending approval");
         toast.success(`Welcome, ${profile.full_name?.split(" ")[0]}! Your application is under review.`);
-        router.push("/dashboard/organizer/pending");
+        window.location.href = "/dashboard/organizer/pending";
         return;
       }
 
       // Success — route based on role
       console.log(`Sign in successful, routing to ${profile.role}`);
       toast.success(`Welcome back, ${profile.full_name?.split(" ")[0]}! 👋`);
-      
-      // Wait for session to be fully persisted to cookies
-      await new Promise(r => setTimeout(r, 500));
       
       // Check if this participant is also an approved mentor
       if (profile.role === "participant") {
@@ -115,7 +101,7 @@ function SignInForm() {
             .select("id").eq("email", profile.email || "").eq("status","approved").maybeSingle();
           if (mentorApp) {
             console.log("Routing to mentor dashboard");
-            router.push("/dashboard/mentor");
+            window.location.href = "/dashboard/mentor";
             return;
           }
         } catch (mentorErr) {
@@ -126,7 +112,7 @@ function SignInForm() {
       
       const dashboardPath = `/dashboard/${profile.role}`;
       console.log(`Navigating to: ${dashboardPath}`);
-      router.push(dashboardPath);
+      window.location.href = dashboardPath;
     } catch (err) {
       console.error("Sign in error:", err);
       toast.error("Sign in failed. Please try again.");

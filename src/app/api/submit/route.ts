@@ -49,6 +49,29 @@ async function executeCode(
   return { stdout, stderr, exitCode, time: Date.now() - start };
 }
 
+// Simple in-memory rate limit cache (reset with server restart)
+const submissionCache = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(userId: string, maxPerMinute: number = 10): boolean {
+  const now = Date.now();
+  const key = userId;
+  const entry = submissionCache.get(key);
+
+  if (!entry || now > entry.resetTime) {
+    submissionCache.set(key, { count: 1, resetTime: now + 60000 });
+    return true;
+  }
+
+  if (entry.count >= maxPerMinute) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+const MAX_CODE_SIZE = 100 * 1024; // 100KB
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
@@ -58,6 +81,11 @@ export async function POST(request: NextRequest) {
     user = data.user;
   } catch {}
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Rate limit check
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: "Too many submissions. Maximum 10 per minute." }, { status: 429 });
+  }
 
   try {
     const body = await request.json();
@@ -69,6 +97,11 @@ export async function POST(request: NextRequest) {
 
     if (!LANGUAGE_MAP[language]) {
       return NextResponse.json({ error: `Language '${language}' not supported.` }, { status: 400 });
+    }
+
+    // Validate code size
+    if (code.length > MAX_CODE_SIZE) {
+      return NextResponse.json({ error: `Code exceeds maximum size of ${MAX_CODE_SIZE / 1024}KB.` }, { status: 400 });
     }
 
     // Use service role to bypass RLS for reading problems + hidden test cases

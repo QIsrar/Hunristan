@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import {
   Eye, EyeOff, UserPlus, Loader2, GraduationCap,
-  Building2, ChevronRight, CheckCircle2, Clock
+  Building2, ChevronRight, CheckCircle2
 } from "lucide-react";
 import type { Role } from "@/types";
 
@@ -20,8 +20,6 @@ export default function SignUpForm() {
   const [role, setRole] = useState<Role>((searchParams.get("role") as Role) || "participant");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
-
   // Shared
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -54,36 +52,6 @@ export default function SignUpForm() {
   const strengthLabels = ["Weak", "Fair", "Good", "Strong"];
   const strengthColors = ["bg-red-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
   const strengthColorText = ["text-red-500", "text-yellow-500", "text-blue-500", "text-green-500"];
-
-  const handleResendEmail = async () => {
-    if (!email) {
-      toast.error("Email not found");
-      return;
-    }
-
-    setResendLoading(true);
-    try {
-      const res = await fetch("/api/resend-verification-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || "Failed to resend verification email");
-        return;
-      }
-
-      toast.success("Verification email sent! Check your inbox.");
-    } catch (error) {
-      toast.error("Failed to resend verification email");
-      console.error(error);
-    } finally {
-      setResendLoading(false);
-    }
-  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,21 +119,6 @@ export default function SignUpForm() {
           }
         }
 
-        // Send verification email
-        try {
-          await fetch("/api/send-verification-email", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId,
-              email,
-              fullName,
-            }),
-          });
-        } catch (emailError) {
-          console.error("Failed to send verification email:", emailError);
-          toast.error("Account created, but verification email failed. Please request it again later.");
-        }
       }
 
       setStep(3);
@@ -259,44 +212,23 @@ export default function SignUpForm() {
         <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center bg-cyan-500/10">
           <CheckCircle2 size={32} className="text-cyan-400" />
         </div>
-        <h1 className="font-display text-2xl font-bold mb-3">Check Your Email! ✉️</h1>
-        
-        {role === "participant" ? (
-          <>
-            <p className="text-muted text-sm mb-2 leading-relaxed">We've sent a verification link to</p>
-            <p className="text-accent text-sm font-semibold mb-6 break-all">{email}</p>
-            
-            <div className="glass rounded-xl p-4 bg-cyan-500/5 border border-cyan-500/20 text-left mb-6">
-              <div className="text-xs text-cyan-400 uppercase tracking-wider mb-3 font-semibold">📋 What to do next:</div>
-              {["Open your email inbox", "Click the verification link in the email", "Your account will be fully activated", "Sign in and start competing!"].map((s, i) => (
-                <div key={i} className="flex items-center gap-3 py-2">
-                  <div className="w-5 h-5 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold">{i + 1}</div>
-                  <span className="text-sm text-muted">{s}</span>
-                </div>
-              ))}
-            </div>
-            
-            <p className="text-xs text-muted mb-6">
-              <strong>Don't see the email?</strong> Check your spam folder or{" "}
-              <button type="button" onClick={handleResendEmail} disabled={resendLoading} className="text-accent hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
-                {resendLoading ? "Sending..." : "request a new link"}
-              </button>
-            </p>
-            
-            <button type="button" onClick={() => router.push("/auth/signin")} className="btn-primary w-full">
-              Done - Go to Sign In
-            </button>
-          </>
+        <h1 className="font-display text-2xl font-bold mb-3">Account Created</h1>
+        <p className="text-muted text-sm mb-2 leading-relaxed">Your account is ready.</p>
+        <p className="text-accent text-sm font-semibold mb-6 break-all">{email}</p>
+
+        {role === "organizer" ? (
+          <p className="text-muted text-sm mb-6 leading-relaxed">
+            Your organizer profile is pending admin approval. You can sign in now and we’ll route you to the pending page until it is approved.
+          </p>
         ) : (
-          <>
-            <p className="text-muted text-sm mb-2 leading-relaxed">We've sent a verification link to</p>
-            <p className="text-accent text-sm font-semibold mb-6 break-all">{email}</p>
-            <p className="text-muted text-sm mb-6 leading-relaxed">
-              Please verify your email first, then our admin team will review your organizer application, typically within <span className="text-text font-medium">24–48 hours</span>. You'll receive an email when approved.
-            </p>
-            <Link href="/" className="btn-secondary w-full flex items-center justify-center">Back to Home</Link>
-          </>
+          <p className="text-muted text-sm mb-6 leading-relaxed">
+            You can sign in now and go straight to your dashboard.
+          </p>
         )}
+
+        <button type="button" onClick={() => router.push("/auth/signin")} className="btn-primary w-full">
+          Done - Go to Sign In
+        </button>
       </div>
     );
   }

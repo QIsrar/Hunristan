@@ -102,11 +102,22 @@ export default function CreateHackathon() {
   const validateStep = (s: number): boolean => {
     if (s === 0) {
       if (!title.trim()) { toast.error("Hackathon title is required"); return false; }
+      if (title.length > 200) { toast.error("Title must be less than 200 characters"); return false; }
       if (!description.trim()) { toast.error("Description is required"); return false; }
+      if (description.length > 5000) { toast.error("Description must be less than 5000 characters"); return false; }
       if (!startTime) { toast.error("Start date & time is required"); return false; }
       if (!endTime) { toast.error("End date & time is required"); return false; }
-      if (new Date(endTime) <= new Date(startTime)) { toast.error("End time must be after start time"); return false; }
+      const startDate = new Date(startTime);
+      const endDate = new Date(endTime);
+      if (endDate <= startDate) { toast.error("End time must be after start time"); return false; }
+      if (startDate < new Date()) { toast.error("Start time must be in the future"); return false; }
       if (parseInt(maxParticipants) < 2) { toast.error("Max participants must be at least 2"); return false; }
+      if (parseInt(maxParticipants) > 10000) { toast.error("Max participants cannot exceed 10000"); return false; }
+      if (parseInt(penaltyPerWrong) < 0) { toast.error("Penalty cannot be negative"); return false; }
+      if (allowTeams && parseInt(maxTeamSize) < 2) { toast.error("Team size must be at least 2"); return false; }
+      if (allowTeams && parseInt(maxTeamSize) > parseInt(maxParticipants)) { toast.error("Team size cannot exceed max participants"); return false; }
+      if (parseInt(registrationFee) < 0) { toast.error("Registration fee cannot be negative"); return false; }
+      if (parseInt(registrationFee) > 100000) { toast.error("Registration fee cannot exceed 100000"); return false; }
       return true;
     }
     if (s === 1) {
@@ -114,11 +125,16 @@ export default function CreateHackathon() {
         const p = problems[i];
         const label = `Problem ${String.fromCharCode(65+i)}`;
         if (!p.title.trim()) { toast.error(`${label}: Title is required`); return false; }
+        if (p.title.length > 200) { toast.error(`${label}: Title must be less than 200 characters`); return false; }
         if (!p.description.trim()) { toast.error(`${label}: Description is required`); return false; }
         if (!p.sample_input.trim()) { toast.error(`${label}: Sample input is required`); return false; }
         if (!p.sample_output.trim()) { toast.error(`${label}: Sample output is required`); return false; }
+        if (p.points < 1 || p.points > 1000) { toast.error(`${label}: Points must be between 1 and 1000`); return false; }
+        if (p.time_limit_minutes < 0.1 || p.time_limit_minutes > 60) { toast.error(`${label}: Time limit must be between 0.1 and 60 minutes`); return false; }
+        if (p.memory_limit_mb < 64 || p.memory_limit_mb > 1024) { toast.error(`${label}: Memory limit must be between 64 and 1024 MB`); return false; }
         const validTCs = p.test_cases.filter(tc => tc.input && tc.expected_output);
         if (validTCs.length === 0) { toast.error(`${label}: At least one complete test case is required`); return false; }
+        if (validTCs.filter(tc => tc.is_hidden).length === 0) { toast.error(`${label}: At least one hidden test case is recommended for security`); return false; }
       }
       return true;
     }
