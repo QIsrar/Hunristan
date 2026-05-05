@@ -141,7 +141,11 @@ export default function SignUpForm() {
           updateData.why_organize = whyOrganize;
         }
         if (Object.keys(updateData).length > 0) {
-          await supabase.from("profiles").update(updateData).eq("id", userId);
+          const { error: updateErr } = await supabase.from("profiles").update(updateData).eq("id", userId);
+          if (updateErr) {
+            console.error("Profile update error during signup:", { code: updateErr.code, message: updateErr.message });
+            // Don't fail the signup if update fails - email verification is more important
+          }
         }
 
         // Send verification email
