@@ -28,7 +28,6 @@
     "react-hot-toast": "^2.4.1",
     "react-resizable-panels": "^2.0.20",
     "recharts": "^2.12.7",
-    "resend": "^6.12.2",
     "zustand": "^4.5.4"
   },
   "devDependencies": {

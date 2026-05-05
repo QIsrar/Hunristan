@@ -1,0 +1,11 @@
+# Vercel Build Configuration
+# This file helps Vercel properly build and deploy the project
+
+runtime: nodejs20.x
+
+# Environment variables are managed in Vercel dashboard, not here
+# See DEPLOYMENT.md for setup instructions
+
+# Functions (API routes) configuration
+[functions]
+api/** = "nodejs20.x"
