@@ -105,6 +105,9 @@ function SignInForm() {
       console.log(`Sign in successful, routing to ${profile.role}`);
       toast.success(`Welcome back, ${profile.full_name?.split(" ")[0]}! 👋`);
       
+      // Wait for session to be fully persisted to cookies
+      await new Promise(r => setTimeout(r, 500));
+      
       // Check if this participant is also an approved mentor
       if (profile.role === "participant") {
         try {
