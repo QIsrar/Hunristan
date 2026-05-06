@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSC } from "@supabase/supabase-js";
+import { verifyBearerToken } from "@/lib/supabase/verifyToken";
 
 const sc = () => createSC(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -14,8 +15,12 @@ export async function POST(req: NextRequest) {
     const accessToken = getAccessToken(req);
     if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const decoded = verifyBearerToken(`Bearer ${accessToken}`);
+    if (!decoded || !decoded.sub) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = decoded.sub;
+
     const admin = sc();
-    const { data: { user } } = await admin.auth.admin.getUserById(accessToken);
+    const { data: { user } } = await admin.auth.admin.getUserById(userId);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { registration_id, action, hackathon_id } = await req.json();

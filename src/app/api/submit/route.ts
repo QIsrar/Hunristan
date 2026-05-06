@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { gradeWithAI } from "@/lib/aiGrading";
+import { verifyBearerToken } from "@/lib/supabase/verifyToken";
 
 const JUDGE0_URL = process.env.JUDGE0_URL || "https://ce.judge0.com";
 
@@ -82,11 +83,16 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // Decode token to get user UUID (sub) and validate
+  const decoded = verifyBearerToken(authHeader);
+  if (!decoded || !decoded.sub) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let user = null;
   try {
-    const { data } = await adminClient.auth.admin.getUserById(accessToken);
+    const { data } = await adminClient.auth.admin.getUserById(decoded.sub);
     user = data.user;
-  } catch {}
+  } catch (e) {
+    console.warn("Failed to fetch user by id:", e);
+  }
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Rate limit check
