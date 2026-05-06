@@ -83,16 +83,29 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Decode token to get user UUID (sub) and validate
-  const decoded = verifyBearerToken(authHeader);
-  if (!decoded || !decoded.sub) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Try Bearer token first (client-side), otherwise fall back to server cookie session
   let user = null;
-  try {
-    const { data } = await adminClient.auth.admin.getUserById(decoded.sub);
-    user = data.user;
-  } catch (e) {
-    console.warn("Failed to fetch user by id:", e);
+  if (accessToken) {
+    const decoded = verifyBearerToken(authHeader);
+    if (decoded && decoded.sub) {
+      try {
+        const { data } = await adminClient.auth.admin.getUserById(decoded.sub);
+        user = data.user;
+      } catch (e) { console.warn("Failed to fetch user by id:", e); }
+    }
   }
+
+  if (!user) {
+    // Fallback: try reading session from server cookies
+    try {
+      const serverSupabase = await createClient();
+      const { data } = await serverSupabase.auth.getUser();
+      user = data.user || null;
+    } catch (e) {
+      console.warn("Server cookie fallback failed:", e);
+    }
+  }
+
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Rate limit check
