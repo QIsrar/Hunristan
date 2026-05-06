@@ -35,6 +35,16 @@ export default function HackathonDetail() {
   const supabase = createClient();
   const router = useRouter();
 
+  const getAccessToken = () => {
+    try {
+      const tokenKey = Object.keys(localStorage).find(key => key.endsWith("-auth-token"));
+      if (!tokenKey) return null;
+      return JSON.parse(localStorage.getItem(tokenKey) || "{}").access_token || null;
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
     async function load() {
       const user = await safeGetUser();
@@ -113,7 +123,10 @@ export default function HackathonDetail() {
     try {
       const res = await fetch("/api/register-hackathon", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+        },
         body: JSON.stringify({ hackathon_id: id }),
       });
       const data = await res.json();
@@ -149,7 +162,10 @@ export default function HackathonDetail() {
       const ext = uploadFile.name.split(".").pop() || "jpg";
       const res = await fetch("/api/payment-upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+        },
         body: JSON.stringify({ hackathon_id: id, image_base64: base64, file_extension: ext, transaction_id: transactionId.trim() }),
       });
       const data = await res.json();
@@ -172,7 +188,10 @@ export default function HackathonDetail() {
     try {
       const res = await fetch("/api/register-hackathon", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+        },
         body: JSON.stringify({ hackathon_id: id }),
       });
       const data = await res.json();

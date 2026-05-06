@@ -4,10 +4,18 @@ import { createClient as createSC } from "@supabase/supabase-js";
 
 const sc = () => createSC(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
+function getAccessToken(req: NextRequest) {
+  const authHeader = req.headers.get("authorization") || "";
+  return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const accessToken = getAccessToken(req);
+    if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const authSupabase = await createClient();
+    const { data: { user } } = await authSupabase.auth.getUser(accessToken);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { registration_id, action, hackathon_id } = await req.json();
@@ -15,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     // Check organizer owns this hackathon
     const { data: hack } = await sc().from("hackathons").select("organizer_id,title").eq("id", hackathon_id).single();
-    const { data: adminProf } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    const { data: adminProf } = await sc().from("profiles").select("role").eq("id", user.id).single();
     if (hack?.organizer_id !== user.id && adminProf?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

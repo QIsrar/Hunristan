@@ -151,9 +151,14 @@ export default function OrganizerDashboard() {
   const handleVerifyPayment = async (registrationId: string, hackathonId: string, action: "verify" | "reject") => {
     setVerifyingPayment(registrationId);
     try {
+      const tokenKey = Object.keys(localStorage).find(key => key.endsWith("-auth-token"));
+      const accessToken = tokenKey ? JSON.parse(localStorage.getItem(tokenKey) || "{}").access_token || null : null;
       const res = await fetch("/api/verify-payment", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({ registration_id: registrationId, action, hackathon_id: hackathonId }),
       });
       const data = await res.json();

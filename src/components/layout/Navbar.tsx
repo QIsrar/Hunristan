@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/context/ThemeContext";
+import { safeGetUser } from "@/lib/supabase/getUser";
 import { Bell, Shield, LogOut, User, ChevronDown, Code2, Menu, X, Settings, Sun, Moon } from "lucide-react";
 import type { Profile } from "@/types";
 
@@ -23,7 +24,7 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    safeGetUser().then(async (user) => {
       if (!user) return;
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (data) setProfile(data);

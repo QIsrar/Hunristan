@@ -15,6 +15,7 @@ import {
 import type { Profile, Hackathon } from "@/types";
 import { format, subDays } from "date-fns";
 import toast from "react-hot-toast";
+import { safeGetUser } from "@/lib/supabase/getUser";
 
 type AdminTab = "overview" | "users" | "organizers" | "hackathons" | "mentors" | "security" | "announcements";
 
@@ -63,10 +64,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function load() {
-      let user = null;
-      try { const { data } = await supabase.auth.getUser(); user = data.user; }
-      catch { await new Promise(r => setTimeout(r, 300));
-        try { const { data } = await supabase.auth.getUser(); user = data.user; } catch {} }
+      const user = await safeGetUser();
       if (!user) return router.push("/auth/signin");
       const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (prof?.role !== "admin") return router.push(`/dashboard/${prof?.role || "participant"}`);
@@ -208,9 +206,18 @@ export default function AdminDashboard() {
   const handleOrganizerAction = async (organizerId: string, action: "approve" | "reject", reason?: string) => {
     setActionLoading(organizerId);
     try {
+      const accessToken = typeof window !== "undefined"
+        ? Object.keys(window.localStorage)
+            .find(key => key.endsWith("-auth-token"))
+            ? JSON.parse(window.localStorage.getItem(Object.keys(window.localStorage).find(key => key.endsWith("-auth-token")) || "") || "{}").access_token
+            : null
+        : null;
       const res = await fetch("/api/organizer-action", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({ organizerId, action, reason }),
       });
       const data = await res.json();

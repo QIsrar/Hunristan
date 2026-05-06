@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 /**
  * POST /api/organizer-action
@@ -8,11 +7,18 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
  * Admin-only endpoint.
  */
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
+  const authHeader = request.headers.get("authorization") || "";
+  const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!accessToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const authSupabase = await createClient();
+  const supabase = await createClient({ admin: true });
 
   // Verify caller is admin
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { data: { user }, error: authError } = await authSupabase.auth.getUser(accessToken);
+  if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: adminProfile } = await supabase
     .from("profiles")

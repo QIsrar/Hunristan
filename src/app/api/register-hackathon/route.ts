@@ -4,23 +4,32 @@ import { createClient as createSC } from "@supabase/supabase-js";
 
 const sc = () => createSC(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
+function getAccessToken(request: NextRequest) {
+  const authHeader = request.headers.get("authorization") || "";
+  return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const accessToken = getAccessToken(req);
+    if (!accessToken) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
+
+    const authSupabase = await createClient();
+    const { data: { user } } = await authSupabase.auth.getUser(accessToken);
     if (!user) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
+    const admin = sc();
 
     const { hackathon_id } = await req.json();
     if (!hackathon_id) return NextResponse.json({ error: "Hackathon ID required" }, { status: 400 });
 
     // Check profile role
-    const { data: profile } = await sc().from("profiles").select("role").eq("id", user.id).single();
+    const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).single();
     if (profile?.role === "organizer" || profile?.role === "admin") {
       return NextResponse.json({ error: "Organizers and admins cannot participate" }, { status: 403 });
     }
 
     // Get hackathon
-    const { data: hack } = await sc().from("hackathons")
+    const { data: hack } = await admin.from("hackathons")
       .select("id,status,max_participants,participant_count,registration_fee,title")
       .eq("id", hackathon_id).single();
 
@@ -35,12 +44,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Check already registered
-    const { data: existing } = await sc().from("registrations")
+    const { data: existing } = await admin.from("registrations")
       .select("id").eq("hackathon_id", hackathon_id).eq("user_id", user.id).maybeSingle();
     if (existing) return NextResponse.json({ error: "You are already registered" }, { status: 409 });
 
     // Register (trigger handles participant_count increment)
-    const { error } = await sc().from("registrations").insert({
+    const { error } = await admin.from("registrations").insert({
       hackathon_id,
       user_id: user.id,
       payment_status: hack.registration_fee > 0 ? "pending" : "not_required",
@@ -48,7 +57,7 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
 
     // Send notification to participant
-    await sc().from("notifications").insert({
+    await admin.from("notifications").insert({
       user_id: user.id,
       type: "registration_confirmed",
       title: "Registration Confirmed!",
@@ -72,19 +81,23 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   // Unregister
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const accessToken = getAccessToken(req);
+    if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const authSupabase = await createClient();
+    const { data: { user } } = await authSupabase.auth.getUser(accessToken);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const admin = sc();
 
     const { hackathon_id } = await req.json();
 
     // Only allow unregistration from upcoming hackathons
-    const { data: hack } = await sc().from("hackathons").select("status").eq("id", hackathon_id).single();
+    const { data: hack } = await admin.from("hackathons").select("status").eq("id", hackathon_id).single();
     if (hack?.status === "active") {
       return NextResponse.json({ error: "Cannot unregister from an active hackathon" }, { status: 400 });
     }
 
-    const { error } = await sc().from("registrations")
+    const { error } = await admin.from("registrations")
       .delete().eq("hackathon_id", hackathon_id).eq("user_id", user.id);
     if (error) throw error;
 

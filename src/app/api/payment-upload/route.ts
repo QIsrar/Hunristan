@@ -10,8 +10,12 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
  * Body: { hackathon_id: string, image_base64: string, file_extension: string }
  */
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const authHeader = request.headers.get("authorization") || "";
+  const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const authSupabase = await createClient();
+  const { data: { user } } = await authSupabase.auth.getUser(accessToken);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check registration exists
-    const { data: reg } = await supabase
+    const { data: reg } = await authSupabase
       .from("registrations")
       .select("id, payment_status")
       .eq("hackathon_id", hackathon_id)
@@ -104,7 +108,7 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(fileName);
 
     // Update registration
-    await supabase
+    await adminClient
       .from("registrations")
       .update({
         payment_screenshot_url: publicUrl || fileName,
@@ -115,14 +119,14 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id);
 
     // Notify organizer
-    const { data: hackathon } = await supabase
+    const { data: hackathon } = await adminClient
       .from("hackathons")
       .select("organizer_id, title")
       .eq("id", hackathon_id)
       .single();
 
     if (hackathon?.organizer_id) {
-      await supabase.from("notifications").insert({
+      await adminClient.from("notifications").insert({
         user_id: hackathon.organizer_id,
         type: "payment_received",
         title: "💰 New Payment Screenshot",

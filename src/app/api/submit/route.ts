@@ -73,11 +73,19 @@ function checkRateLimit(userId: string, maxPerMinute: number = 10): boolean {
 const MAX_CODE_SIZE = 100 * 1024; // 100KB
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
+  const authHeader = request.headers.get("authorization") || "";
+  const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const authSupabase = await createClient();
+  const adminClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
   let user = null;
   try {
-    const { data } = await supabase.auth.getUser();
+    const { data } = await authSupabase.auth.getUser(accessToken);
     user = data.user;
   } catch {}
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -103,12 +111,6 @@ export async function POST(request: NextRequest) {
     if (code.length > MAX_CODE_SIZE) {
       return NextResponse.json({ error: `Code exceeds maximum size of ${MAX_CODE_SIZE / 1024}KB.` }, { status: 400 });
     }
-
-    // Use service role to bypass RLS for reading problems + hidden test cases
-    const adminClient = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
 
     const { data: problem, error: probErr } = await adminClient
       .from("problems").select("*").eq("id", problem_id).single();
@@ -200,7 +202,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Save submission using regular client (user's auth)
-    const { data: submission, error: subErr } = await supabase.from("submissions").insert({
+    const { data: submission, error: subErr } = await adminClient.from("submissions").insert({
       hackathon_id: is_practice ? null : (hackathon_id || null),
       problem_id,
       user_id: user.id,
@@ -250,7 +252,7 @@ export async function POST(request: NextRequest) {
 
     // Notification (non-fatal)
     try {
-      await supabase.from("notifications").insert({
+      await adminClient.from("notifications").insert({
         user_id: user.id,
         type: "submission_result",
         title: finalVerdict === "accepted" ? "✅ Accepted!" : "❌ Submission Result",

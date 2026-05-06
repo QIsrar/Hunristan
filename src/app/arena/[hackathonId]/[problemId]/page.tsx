@@ -84,6 +84,16 @@ export default function ArenaPage() {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const confettiShownRef = useRef(false);
 
+  const getAccessToken = useCallback(() => {
+    try {
+      const tokenKey = Object.keys(localStorage).find(key => key.endsWith("-auth-token"));
+      if (!tokenKey) return null;
+      return JSON.parse(localStorage.getItem(tokenKey) || "{}").access_token || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     async function load() {
       let user = null;
@@ -135,7 +145,7 @@ export default function ArenaPage() {
       if (remaining === 0 && !eventEndedRef.current) {
         eventEndedRef.current = true;
         toast.error("⏰ Event has ended! Auto-submitting...", { duration: 4000 });
-        fetch("/api/submit", { method: "POST", headers: { "Content-Type": "application/json" },
+        fetch("/api/submit", { method: "POST", headers: { "Content-Type": "application/json", ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) },
           body: JSON.stringify({ hackathon_id: hackathonId, problem_id: problemId, language: languageRef.current, code, is_practice: false }),
         }).catch(() => {}).finally(() => setTimeout(() => router.push(`/hackathons/${hackathonId}/leaderboard`), 2000));
       }
@@ -204,7 +214,7 @@ export default function ArenaPage() {
     toast("⏰ Time's up! Auto-submitting...", { duration: 3000 });
     if (code.trim() && userId && problem) {
       try {
-        await fetch("/api/submit", { method: "POST", headers: { "Content-Type": "application/json" },
+        await fetch("/api/submit", { method: "POST", headers: { "Content-Type": "application/json", ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) },
           body: JSON.stringify({ hackathon_id: hackathonId, problem_id: problemId, language, code, is_practice: false }),
         });
       } catch {}
@@ -243,7 +253,7 @@ export default function ArenaPage() {
     setSubmitting(true); setRunOutput(null); setSubmitResult(null);
     toast(`Submitting as ${languageRef.current}...`, { duration: 1500, id: "submit-lang" });
     try {
-      const res = await fetch("/api/submit", { method: "POST", headers: { "Content-Type": "application/json" },
+      const res = await fetch("/api/submit", { method: "POST", headers: { "Content-Type": "application/json", ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) },
         body: JSON.stringify({ hackathon_id: hackathonId, problem_id: problemId, language: languageRef.current, code, is_practice: false, tab_violations: tabViolations }) });
       const data: SubmitResult & { error?: string } = await res.json();
       if (!res.ok) { toast.error(data.error || "Submission failed", { duration: 6000 }); setSubmitResult({ verdict: "error", score: 0, passed: 0, total: 0, error: data.error }); return; }
