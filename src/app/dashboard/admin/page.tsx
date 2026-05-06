@@ -158,15 +158,6 @@ export default function AdminDashboard() {
     return { label: "Low", cls: "text-muted" };
   };
 
-  const changeRole = async (userId: string, role: string) => {
-    if (userId === profile?.id) { toast.error("You cannot change your own role."); return; }
-    const target = users.find(u => u.id === userId);
-    if (target?.role === "admin") { toast.error("Cannot change another admin's role."); return; }
-    await supabase.from("profiles").update({ role }).eq("id", userId);
-    setUsers(u => u.map(p => p.id === userId ? { ...p, role: role as any } : p));
-    toast.success("Role updated");
-  };
-
   const approveHackathon = async (id: string, approved: boolean) => {
     const { error } = await supabase.from("hackathons")
       .update({ is_approved: approved, status: approved ? "upcoming" : "suspended" })
@@ -427,16 +418,9 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td className="p-4">
-                        {u.id === profile?.id ? (
-                          <span className="text-xs px-2 py-1 rounded-full border border-accent2/40 text-accent2">Admin (you)</span>
-                        ) : (
-                          <select value={u.role} onChange={e => changeRole(u.id, e.target.value)}
-                            className={`text-xs px-2 py-1 rounded-full border bg-transparent cursor-pointer ${u.role === "admin" ? "border-accent2/40 text-accent2" : u.role === "organizer" ? "border-accent3/40 text-accent3" : "border-accent/40 text-accent"}`}>
-                            <option value="participant">Participant</option>
-                            <option value="organizer">Organizer</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        )}
+                        <span className={`text-xs px-2 py-1 rounded-full border ${u.role === "admin" ? "border-accent2/40 text-accent2" : u.role === "organizer" ? "border-accent3/40 text-accent3" : "border-accent/40 text-accent"}`}>
+                          {u.role === "admin" ? (u.id === profile?.id ? "Admin (you)" : "Admin") : u.role === "organizer" ? "Organizer" : "Participant"}
+                        </span>
                       </td>
                       <td className="p-4 font-mono text-muted hidden md:table-cell">{u.total_points}</td>
                       <td className="p-4 text-muted text-xs hidden lg:table-cell">{u.created_at ? format(new Date(u.created_at), "MMM d, yyyy") : "—"}</td>
