@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSC } from "@supabase/supabase-js";
+import { verifyBearerToken } from "@/lib/supabase/verifyToken";
 
 const sc = () => createSC(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 function getAccessToken(request: NextRequest) {
+  // return the raw Authorization header (may start with "Bearer ")
   const authHeader = request.headers.get("authorization") || "";
-  return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  return authHeader || null;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const accessToken = getAccessToken(req);
-    if (!accessToken) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
+    const authHeader = getAccessToken(req);
+    if (!authHeader) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
+
+    const decoded = verifyBearerToken(authHeader);
+    if (!decoded || !decoded.sub) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
 
     const admin = sc();
-    const { data: { user } } = await admin.auth.admin.getUserById(accessToken);
+    const { data: { user } } = await admin.auth.admin.getUserById(decoded.sub);
     if (!user) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
 
     const { hackathon_id } = await req.json();
@@ -80,11 +85,14 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   // Unregister
   try {
-    const accessToken = getAccessToken(req);
-    if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authHeader = getAccessToken(req);
+    if (!authHeader) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const decoded = verifyBearerToken(authHeader);
+    if (!decoded || !decoded.sub) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const admin = sc();
-    const { data: { user } } = await admin.auth.admin.getUserById(accessToken);
+    const { data: { user } } = await admin.auth.admin.getUserById(decoded.sub);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { hackathon_id } = await req.json();

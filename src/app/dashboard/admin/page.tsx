@@ -173,10 +173,35 @@ export default function AdminDashboard() {
     setPosting(true);
     // Use profile id directly — avoids AbortError from second getUser call
     if (!profile?.id) { setPosting(false); return; }
-    await supabase.from("announcements").insert({ admin_id: profile.id, ...announcement, is_active: true });
-    setAnnouncement({ title: "", content: "", type: "info" });
-    toast.success("Announcement posted!");
-    setPosting(false);
+
+    try {
+      let token: string | null = null;
+      if (typeof window !== "undefined") {
+        const key = Object.keys(localStorage).find(k => k.endsWith("-auth-token"));
+        if (key) {
+          try { token = JSON.parse(localStorage.getItem(key) || "{}").access_token || null; } catch { token = null; }
+        }
+      }
+
+      const res = await fetch("/api/post-announcement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(announcement),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err?.error || "Failed to post announcement");
+      } else {
+        setAnnouncement({ title: "", content: "", type: "info" });
+        toast.success("Announcement posted!");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to post announcement");
+    } finally {
+      setPosting(false);
+    }
   };
 
   const filteredUsers = users.filter(u =>
