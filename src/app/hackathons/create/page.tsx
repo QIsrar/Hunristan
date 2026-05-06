@@ -8,7 +8,15 @@ import toast from "react-hot-toast";
 import { ChevronRight, ChevronLeft, Plus, Trash2, Loader2, Check, Info } from "lucide-react";
 
 const STEPS = ["Basic Info", "Problems", "Rules", "Review & Publish"];
-const LANGUAGES = ["python","javascript","typescript","cpp","c","java","go","rust","ruby","kotlin","swift","php","csharp"];
+const RULE_LANGUAGE_OPTIONS = [
+  { value: "c", label: "c" },
+  { value: "cpp", label: "cpp" },
+  { value: "java", label: "java" },
+  { value: "javascript", label: "js" },
+  { value: "python", label: "python" },
+];
+
+const formatLanguageLabel = (lang: string) => (lang === "javascript" ? "js" : lang);
 
 const nowLocal = () => {
   const now = new Date();
@@ -65,7 +73,7 @@ export default function CreateHackathon() {
     test_cases: [{ input: "", expected_output: "", is_hidden: false }]
   }]);
 
-  const [allowedLangs, setAllowedLangs] = useState<string[]>(["python","javascript","cpp","java"]);
+  const [allowedLangs, setAllowedLangs] = useState<string[]>(RULE_LANGUAGE_OPTIONS.map((opt) => opt.value));
   const [scoringMethod, setScoringMethod] = useState("best_score");
   const [penaltyPerWrong, setPenaltyPerWrong] = useState("0");
   const [allowTeams, setAllowTeams] = useState(false);
@@ -442,10 +450,10 @@ export default function CreateHackathon() {
               <div>
                 <label className="text-sm text-muted mb-3 block">Allowed Languages *</label>
                 <div className="flex flex-wrap gap-2">
-                  {LANGUAGES.map(lang => (
-                    <button key={lang} onClick={() => toggleLang(lang)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-all ${allowedLangs.includes(lang) ? "bg-accent text-bg" : "glass text-muted hover:text-text"}`}>
-                      {lang}
+                  {RULE_LANGUAGE_OPTIONS.map((lang) => (
+                    <button key={lang.value} onClick={() => toggleLang(lang.value)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-all ${allowedLangs.includes(lang.value) ? "bg-accent text-bg" : "glass text-muted hover:text-text"}`}>
+                      {lang.label}
                     </button>
                   ))}
                 </div>
@@ -501,7 +509,7 @@ export default function CreateHackathon() {
                 )}
                 <div className="flex justify-between"><span className="text-muted">Problems</span><span>{problems.length}</span></div>
                 <div className="flex justify-between"><span className="text-muted">Max Participants</span><span>{maxParticipants}</span></div>
-                <div className="flex justify-between"><span className="text-muted">Languages</span><span className="text-right max-w-xs text-xs">{allowedLangs.join(", ")}</span></div>
+                <div className="flex justify-between"><span className="text-muted">Languages</span><span className="text-right max-w-xs text-xs">{allowedLangs.map(formatLanguageLabel).join(", ")}</span></div>
                 <div className="flex justify-between"><span className="text-muted">Scoring</span><span className="capitalize">{scoringMethod.replace(/_/g," ")}</span></div>
                 <div className="flex justify-between"><span className="text-muted">Penalty</span><span>{parseInt(penaltyPerWrong) > 0 ? `${penaltyPerWrong} pts/wrong` : "None"}</span></div>
                 <div className="flex justify-between"><span className="text-muted">Fee</span><span>{parseInt(registrationFee) > 0 ? `PKR ${registrationFee}` : "Free"}</span></div>
