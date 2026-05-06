@@ -77,7 +77,6 @@ export async function POST(request: NextRequest) {
   const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
   if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const authSupabase = await createClient();
   const adminClient = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -85,7 +84,7 @@ export async function POST(request: NextRequest) {
 
   let user = null;
   try {
-    const { data } = await authSupabase.auth.getUser(accessToken);
+    const { data } = await adminClient.auth.admin.getUserById(accessToken);
     user = data.user;
   } catch {}
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

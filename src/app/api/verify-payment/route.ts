@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
     const accessToken = getAccessToken(req);
     if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const authSupabase = await createClient();
-    const { data: { user } } = await authSupabase.auth.getUser(accessToken);
+    const admin = sc();
+    const { data: { user } } = await admin.auth.admin.getUserById(accessToken);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { registration_id, action, hackathon_id } = await req.json();

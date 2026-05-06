@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { verifyBearerToken } from "@/lib/supabase/verifyToken";
 
 /**
  * POST /api/organizer-action
@@ -8,22 +9,23 @@ import { createClient } from "@/lib/supabase/server";
  */
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization") || "";
-  const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!accessToken) {
+  if (!authHeader) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const authSupabase = await createClient();
+  const decoded = verifyBearerToken(authHeader);
+  if (!decoded || !decoded.sub) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient({ admin: true });
+  const userId = decoded.sub;
 
   // Verify caller is admin
-  const { data: { user }, error: authError } = await authSupabase.auth.getUser(accessToken);
-  if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const { data: adminProfile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("id", userId)
     .single();
 
   if (adminProfile?.role !== "admin") {

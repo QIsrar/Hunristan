@@ -14,10 +14,9 @@ export async function POST(req: NextRequest) {
     const accessToken = getAccessToken(req);
     if (!accessToken) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
 
-    const authSupabase = await createClient();
-    const { data: { user } } = await authSupabase.auth.getUser(accessToken);
-    if (!user) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
     const admin = sc();
+    const { data: { user } } = await admin.auth.admin.getUserById(accessToken);
+    if (!user) return NextResponse.json({ error: "Sign in to register" }, { status: 401 });
 
     const { hackathon_id } = await req.json();
     if (!hackathon_id) return NextResponse.json({ error: "Hackathon ID required" }, { status: 400 });
@@ -84,10 +83,9 @@ export async function DELETE(req: NextRequest) {
     const accessToken = getAccessToken(req);
     if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const authSupabase = await createClient();
-    const { data: { user } } = await authSupabase.auth.getUser(accessToken);
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const admin = sc();
+    const { data: { user } } = await admin.auth.admin.getUserById(accessToken);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { hackathon_id } = await req.json();
 

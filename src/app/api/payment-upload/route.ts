@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { verifyBearerToken } from "@/lib/supabase/verifyToken";
 
 /**
  * POST /api/payment-upload
@@ -11,12 +12,13 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
  */
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization") || "";
-  const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!accessToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!authHeader) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const authSupabase = await createClient();
-  const { data: { user } } = await authSupabase.auth.getUser(accessToken);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const decoded = verifyBearerToken(authHeader);
+  if (!decoded || !decoded.sub) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const userId = decoded.sub;
+  const supabase = await createClient({ admin: true });
 
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -42,11 +44,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check registration exists
-    const { data: reg } = await authSupabase
+    const { data: reg } = await supabase
       .from("registrations")
       .select("id, payment_status")
       .eq("hackathon_id", hackathon_id)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (!reg) {
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use admin client to bypass storage RLS
-    const adminClient = createAdminClient(SUPABASE_URL, SERVICE_KEY, {
+    const storageClient = createAdminClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
@@ -77,14 +79,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File too large. Max 5MB." }, { status: 400 });
     }
 
-    const fileName = `${hackathon_id}/${user.id}_${Date.now()}.${ext}`;
+    const fileName = `${hackathon_id}/${userId}_${Date.now()}.${ext}`;
     const mimeTypes: Record<string, string> = {
       jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
       pdf: "application/pdf", webp: "image/webp",
     };
 
     // Upload to Supabase Storage
-    const { error: uploadError } = await adminClient.storage
+    const { error: uploadError } = await storageClient.storage
       .from("payment-screenshots")
       .upload(fileName, buffer, {
         contentType: mimeTypes[ext] || "application/octet-stream",
@@ -103,12 +105,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get public URL (or signed URL for private bucket)
-    const { data: { publicUrl } } = adminClient.storage
+    const { data: { publicUrl } } = storageClient.storage
       .from("payment-screenshots")
       .getPublicUrl(fileName);
 
     // Update registration
-    await adminClient
+    await supabase
       .from("registrations")
       .update({
         payment_screenshot_url: publicUrl || fileName,
@@ -116,17 +118,17 @@ export async function POST(request: NextRequest) {
         transaction_id: transaction_id?.trim() || null,
       })
       .eq("hackathon_id", hackathon_id)
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     // Notify organizer
-    const { data: hackathon } = await adminClient
+    const { data: hackathon } = await supabase
       .from("hackathons")
       .select("organizer_id, title")
       .eq("id", hackathon_id)
       .single();
 
     if (hackathon?.organizer_id) {
-      await adminClient.from("notifications").insert({
+      await supabase.from("notifications").insert({
         user_id: hackathon.organizer_id,
         type: "payment_received",
         title: "💰 New Payment Screenshot",
