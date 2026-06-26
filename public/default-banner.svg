@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="gb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5a3" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#gb)" />
+  <text x="50%" y="50%" font-family="Inter, Arial, sans-serif" font-size="28" fill="#fff" text-anchor="middle" dominant-baseline="middle">Smart Hunristan</text>
+  <text x="50%" y="68%" font-family="Inter, Arial, sans-serif" font-size="14" fill="#e6e6e6" text-anchor="middle">Hackathon banner</text>
+</svg>

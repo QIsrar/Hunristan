@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="16" fill="#071126" />
+  <path d="M45 40 L30 64 L45 88" stroke="#00e5ff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M83 40 L98 64 L83 88" stroke="#7c3aed" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="64" cy="64" r="18" fill="#00e5ff" opacity="0.08" />
+  <text x="64" y="74" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="28" fill="#ffffff" text-anchor="middle">SH</text>
+</svg>
